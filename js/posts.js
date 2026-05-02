@@ -19,33 +19,32 @@ const Posts = (() => {
 
     if (posts.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="8" class="empty-state">
+        <tr><td colspan="7" class="empty-state">
           Nog geen vaste posten. Importeer een afschrift of voeg handmatig toe.
         </td></tr>`;
       return;
     }
 
-    // Fetch labels linked to each post via transactions
+    // Fetch the first label linked to each post (via transactions)
     const postLabels = DB.query(`
-      SELECT rp.id AS post_id, GROUP_CONCAT(DISTINCT l.name) AS label_names
+      SELECT rp.id AS post_id, MIN(l.name) AS label_name
       FROM   recurring_posts rp
-      JOIN   transactions t  ON t.post_id  = rp.id
-      JOIN   labels       l  ON l.id       = t.label_id
+      JOIN   transactions t ON t.post_id = rp.id
+      JOIN   labels       l ON l.id      = t.label_id
       GROUP  BY rp.id
     `);
-    const labelMap = Object.fromEntries(postLabels.map(r => [r.post_id, r.label_names]));
+    const labelMap = Object.fromEntries(postLabels.map(r => [r.post_id, r.label_name]));
 
     tbody.innerHTML = posts.map(p => {
-      const labelNames = labelMap[p.id];
-      const labelCell  = labelNames
-        ? labelNames.split(',').map(n => `<span class="label-pill">${n.trim()}</span>`).join(' ')
-        : '<span class="text-muted small">—</span>';
+      const labelName  = labelMap[p.id];
+      const displayName = labelName
+        ? `<span class="label-pill">${labelName}</span>`
+        : p.name;
 
       return `
         <tr>
-          <td>${p.name}</td>
+          <td>${displayName}</td>
           <td><span class="badge">${p.category_name || '—'}</span></td>
-          <td>${labelCell}</td>
           <td>${FREQ_LABELS[p.frequency] || `${p.frequency}×`}</td>
           <td class="amount-debit">€${p.amount.toFixed(2)}</td>
           <td class="amount-fixed">€${p.monthly_amount.toFixed(2)}</td>
