@@ -1,1 +1,1653 @@
-coming soon
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vaste Lasten Dashboard</title>
+
+  <!-- ============================================================
+       DEPLOYMENT INSTRUCTIES
+       1. Download dit bestand
+       2. cd ~/Workspace/vaste-lasten-dashboard
+       3. cp ~/Downloads/index.html .
+       4. git add index.html
+       5. git commit -m "update dashboard"
+       6. git push
+       Live op: https://iceburg1991.github.io/vaste-lasten-dashboard/
+  ============================================================ -->
+
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       CSS VARIABELEN & RESET
+    ============================================================ */
+    :root {
+      --bg:          #0f1117;
+      --surface:     #181c27;
+      --surface2:    #1f2535;
+      --border:      #2a3045;
+      --accent:      #4fffb0;
+      --accent2:     #ff6b6b;
+      --accent3:     #ffd93d;
+      --text:        #e8eaf0;
+      --text-muted:  #6b7280;
+      --font-head:   'Syne', sans-serif;
+      --font-mono:   'DM Mono', monospace;
+      --radius:      12px;
+      --radius-sm:   6px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    #app { display: none; }
+    #app.visible { display: block; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-title {
+      font-family: var(--font-head);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+    }
+
+    .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+    .main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+
+    /* ============================================================
+       BUTTONS
+    ============================================================ */
+    .btn {
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary { background: var(--accent); color: #0f1117; border-color: var(--accent); font-weight: 500; }
+    .btn.primary:hover { background: #3de89d; }
+    .btn.danger { border-color: var(--accent2); color: var(--accent2); }
+    .btn.danger:hover { background: var(--accent2); color: #0f1117; }
+    .btn.small { padding: 4px 10px; font-size: 12px; }
+
+    /* ============================================================
+       KPI CARDS
+    ============================================================ */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .kpi-card:hover { border-color: var(--accent); }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+    .kpi-card.orange::before { background: var(--accent3); }
+    .kpi-card.red::before    { background: var(--accent2); }
+
+    .kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .kpi-value {
+      font-family: var(--font-head);
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .kpi-delta {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .kpi-delta.up   { color: var(--accent2); }
+    .kpi-delta.down { color: var(--accent); }
+
+    /* ============================================================
+       CHARTS
+    ============================================================ */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .chart-title {
+      font-family: var(--font-head);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    .chart-wrapper { position: relative; height: 260px; }
+
+    /* ============================================================
+       TABELLEN
+    ============================================================ */
+    .section-title {
+      font-family: var(--font-head);
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+
+    td { padding: 12px 16px; vertical-align: middle; }
+
+    .amount { font-weight: 500; color: var(--accent); }
+    .amount.debit { color: var(--accent2); }
+
+    .freq-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+
+    .cat-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--surface2);
+      color: var(--accent3);
+      border: 1px solid rgba(255, 217, 61, 0.2);
+    }
+
+    .note-text { color: var(--text-muted); font-size: 12px; font-style: italic; }
+
+    /* ============================================================
+       MODALS
+    ============================================================ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 540px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-family: var(--font-head);
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 24px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-select option { background: var(--surface); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+    /* ============================================================
+       REVIEW PANEL (twijfelgevallen)
+    ============================================================ */
+    .review-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .review-item-name { font-weight: 500; margin-bottom: 4px; }
+    .review-item-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+    .review-item-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* ============================================================
+       LANDING / WELCOME SCREEN
+    ============================================================ */
+    #landing {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 32px;
+    }
+
+    .landing-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .landing-title {
+      font-family: var(--font-head);
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+
+    .landing-sub {
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .landing-options { display: flex; flex-direction: column; gap: 12px; }
+
+    .landing-btn {
+      padding: 16px 24px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .landing-btn:hover { border-color: var(--accent); }
+    .landing-btn .btn-title { font-weight: 500; }
+    .landing-btn .btn-desc { font-size: 12px; color: var(--text-muted); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 8px 0;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ============================================================
+       TABS
+    ============================================================ */
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+
+    .tab {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: -1px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ============================================================
+       MISC
+    ============================================================ */
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+    .empty-state .icon { font-size: 32px; margin-bottom: 12px; }
+
+    .google-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: white;
+      color: #333;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      width: 100%;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .google-btn:hover { background: #f5f5f5; }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent2);
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .status-dot.connected { background: var(--accent); }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .alert.info { border-color: rgba(79, 255, 176, 0.3); background: rgba(79, 255, 176, 0.05); color: var(--accent); }
+    .alert.warn { border-color: rgba(255, 217, 61, 0.3); background: rgba(255, 217, 61, 0.05); color: var(--accent3); }
+
+    .month-selector { display: flex; gap: 8px; align-items: center; margin-bottom: 24px; }
+    .month-selector select { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 13px; }
+
+    @media (max-width: 768px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .main { padding: 16px; }
+      .topbar { padding: 12px 16px; }
+      .kpi-value { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     LANDING SCREEN
+============================================================ -->
+<div id="landing">
+  <div class="landing-box">
+    <div class="landing-title">Vaste Lasten</div>
+    <p class="landing-sub">Inzicht in je maandelijkse kosten, genormaliseerd vanuit je Rabobank afschriften.</p>
+
+    <div class="landing-options">
+      <button class="landing-btn" onclick="UI.connectGoogleDrive()">
+        <span class="btn-title">☁️ Verbinden met Google Drive</span>
+        <span class="btn-desc">Database opslaan in Google Drive — toegankelijk op elk apparaat</span>
+      </button>
+
+      <div class="divider">of</div>
+
+      <button class="landing-btn" onclick="DB.loadFromFile()">
+        <span class="btn-title">📂 Bestaande database laden</span>
+        <span class="btn-desc">Laad een eerder gedownloade .sqlite file</span>
+      </button>
+
+      <button class="landing-btn" onclick="DB.createNew()">
+        <span class="btn-title">✨ Nieuwe database aanmaken</span>
+        <span class="btn-desc">Begin vanaf nul, lokaal opgeslagen</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     HOOFDAPP
+============================================================ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title">⬡ Vaste Lasten</div>
+    <div class="topbar-actions">
+      <span id="drive-status"><span class="status-dot"></span>Lokaal</span>
+      <button class="btn" onclick="CSV.openImportModal()">+ Afschrift importeren</button>
+      <button class="btn" onclick="DB.save()">💾 Opslaan</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="UI.switchTab('dashboard')">Dashboard</button>
+      <button class="tab" onclick="UI.switchTab('posten')">Vaste Posten</button>
+      <button class="tab" onclick="UI.switchTab('transacties')">Transacties</button>
+      <button class="tab" onclick="UI.switchTab('instellingen')">Instellingen</button>
+    </div>
+
+    <!-- TAB: DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content active">
+      <div class="month-selector">
+        <span style="color:var(--text-muted)">Periode:</span>
+        <select id="month-select" onchange="Dashboard.render()"></select>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <!-- CHARTS -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Vaste lasten per maand (genormaliseerd)</div>
+          <div class="chart-wrapper"><canvas id="chart-trend"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Verdeling per categorie</div>
+          <div class="chart-wrapper"><canvas id="chart-cat"></canvas></div>
+        </div>
+      </div>
+
+      <!-- AFWIJKINGEN -->
+      <div class="section-title">
+        Afwijkingen <span class="badge" id="afwijkingen-count">0</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Post</th><th>Categorie</th><th>Vorige maand</th><th>Huidig</th><th>Zelfde maand vorig jaar</th><th>Δ MoM</th><th>Δ YoY</th>
+          </tr></thead>
+          <tbody id="afwijkingen-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: VASTE POSTEN -->
+    <div id="tab-posten" class="tab-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="section-title" style="margin:0">Beheer vaste posten</div>
+        <button class="btn primary" onclick="Posten.openModal()">+ Handmatig toevoegen</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Naam</th><th>Categorie</th><th>Frequentie</th><th>Bedrag</th><th>€/maand</th><th>Notitie</th><th>Acties</th>
+          </tr></thead>
+          <tbody id="posten-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: TRANSACTIES -->
+    <div id="tab-transacties" class="tab-content">
+      <div class="month-selector">
+        <span style="color:var(--text-muted)">Maand:</span>
+        <select id="trans-month-select" onchange="Transacties.render()"></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Datum</th><th>Omschrijving</th><th>Tegenrekening</th><th>Bedrag</th><th>Categorie</th><th>Type</th>
+          </tr></thead>
+          <tbody id="trans-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: INSTELLINGEN -->
+    <div id="tab-instellingen" class="tab-content">
+      <div class="section-title">Categorieën</div>
+      <div class="table-wrap" style="margin-bottom:24px;">
+        <table>
+          <thead><tr><th>Naam</th><th>Acties</th></tr></thead>
+          <tbody id="cat-tbody"></tbody>
+        </table>
+      </div>
+      <button class="btn primary" onclick="Instellingen.addCatModal()">+ Categorie toevoegen</button>
+
+      <div class="section-title" style="margin-top:32px;">Database</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn" onclick="DB.exportSqlite()">📥 Download .sqlite backup</button>
+        <button class="btn danger" onclick="DB.reset()">⚠ Database resetten</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS
+============================================================ -->
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <div class="modal-title">Rabobank CSV importeren</div>
+    <div class="alert info">Exporteer je afschrift als CSV via Rabobank Online Banking → Downloaden → CSV formaat.</div>
+    <div class="form-group">
+      <label class="form-label">Selecteer CSV bestand</label>
+      <input type="file" id="csv-file-input" accept=".csv" class="form-input" />
+    </div>
+    <div id="import-preview" style="display:none;">
+      <div class="alert info" id="import-preview-text"></div>
+    </div>
+    <div id="review-section" style="display:none;">
+      <div class="section-title" style="margin-top:16px;">Twijfelgevallen — controleer deze posten <span class="badge" id="review-count">0</span></div>
+      <div id="review-items"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="UI.closeModal('modal-import')">Annuleren</button>
+      <button class="btn primary" id="btn-import-confirm" onclick="CSV.confirmImport()" disabled>Importeren</button>
+    </div>
+  </div>
+</div>
+
+<!-- Post Modal -->
+<div class="modal-overlay" id="modal-post">
+  <div class="modal">
+    <div class="modal-title" id="modal-post-title">Vaste post toevoegen</div>
+    <input type="hidden" id="post-id" />
+    <div class="form-group">
+      <label class="form-label">Naam</label>
+      <input type="text" id="post-naam" class="form-input" placeholder="bijv. Ziggo Abonnement" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categorie</label>
+      <select id="post-cat" class="form-select"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Frequentie</label>
+      <select id="post-freq" class="form-select">
+        <option value="12">Maandelijks (12×/jaar)</option>
+        <option value="10">10× per jaar (bijv. gemeentebelasting)</option>
+        <option value="6">Halfjaarlijks (2×/jaar)</option>
+        <option value="4">Per kwartaal (4×/jaar)</option>
+        <option value="2">2× per jaar</option>
+        <option value="1">Jaarlijks (1×/jaar)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bedrag per betaling (€)</label>
+      <input type="number" id="post-bedrag" class="form-input" placeholder="bijv. 89.99" step="0.01" min="0" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">IBAN tegenrekening (optioneel — voor auto-herkenning)</label>
+      <input type="text" id="post-iban" class="form-input" placeholder="bijv. NL91ABNA0417164300" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Zoekterm omschrijving (optioneel)</label>
+      <input type="text" id="post-zoekterm" class="form-input" placeholder="bijv. ZIGGO of BELASTING" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notitie</label>
+      <textarea id="post-notitie" class="form-textarea" placeholder="bijv. loopt af in maart 2026"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="UI.closeModal('modal-post')">Annuleren</button>
+      <button class="btn primary" onclick="Posten.save()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Categorie Modal -->
+<div class="modal-overlay" id="modal-cat">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title">Categorie toevoegen</div>
+    <div class="form-group">
+      <label class="form-label">Naam</label>
+      <input type="text" id="cat-naam" class="form-input" placeholder="bijv. Huisdieren" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="UI.closeModal('modal-cat')">Annuleren</button>
+      <button class="btn primary" onclick="Instellingen.saveCat()">Toevoegen</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="db-file-input" accept=".sqlite" style="display:none" onchange="DB.loadFromFileInput(event)" />
+
+<script>
+// ============================================================
+// SECTIE: CONSTANTEN & CONFIGURATIE
+// ============================================================
+const CONFIG = {
+  GOOGLE_CLIENT_ID: '38413226701-opprq2rduaediv52s9or75ca0ukqvv84.apps.googleusercontent.com',
+  GOOGLE_DRIVE_SCOPE: 'https://www.googleapis.com/auth/drive.file',
+  DB_FILENAME: 'vaste-lasten.sqlite',
+  DEFAULT_CATS: ['Wonen', 'Transport', 'Verzekeringen', 'Abonnementen', 'Belastingen', 'Overig'],
+  // Drempelwaarde voor "twijfelgeval" detectie: minimaal 2x voorgekomen
+  RECURRENCE_MIN_COUNT: 2,
+  // Afwijking > 10% markeren in dashboard
+  DEVIATION_THRESHOLD: 0.10,
+};
+
+// ============================================================
+// SECTIE: DATABASE (sql.js + SQLite)
+// ============================================================
+const DB = (() => {
+  let SQL = null;
+  let db = null;
+
+  const SCHEMA = `
+    CREATE TABLE IF NOT EXISTS categorieen (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      naam TEXT NOT NULL UNIQUE
+    );
+    CREATE TABLE IF NOT EXISTS vaste_posten (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      naam TEXT NOT NULL,
+      categorie_id INTEGER,
+      frequentie INTEGER NOT NULL DEFAULT 12,
+      bedrag REAL NOT NULL DEFAULT 0,
+      iban TEXT,
+      zoekterm TEXT,
+      notitie TEXT,
+      FOREIGN KEY(categorie_id) REFERENCES categorieen(id)
+    );
+    CREATE TABLE IF NOT EXISTS transacties (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      datum TEXT NOT NULL,
+      omschrijving TEXT,
+      tegenrekening TEXT,
+      bedrag REAL NOT NULL,
+      type TEXT NOT NULL,
+      categorie_id INTEGER,
+      post_id INTEGER,
+      FOREIGN KEY(categorie_id) REFERENCES categorieen(id),
+      FOREIGN KEY(post_id) REFERENCES vaste_posten(id)
+    );
+  `;
+
+  async function init() {
+    SQL = await initSqlJs({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`
+    });
+  }
+
+  function createNew() {
+    db = new SQL.Database();
+    db.run(SCHEMA);
+    // Standaard categorieën
+    CONFIG.DEFAULT_CATS.forEach(c => {
+      db.run('INSERT OR IGNORE INTO categorieen (naam) VALUES (?)', [c]);
+    });
+    showApp();
+  }
+
+  function loadFromFile() {
+    document.getElementById('db-file-input').click();
+  }
+
+  function loadFromFileInput(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const arr = new Uint8Array(e.target.result);
+      db = new SQL.Database(arr);
+      db.run(SCHEMA); // Zorg dat nieuwe tabellen bestaan bij oudere DBs
+      showApp();
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function showApp() {
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    Dashboard.populateMonthSelector();
+    Dashboard.render();
+    Posten.render();
+    Transacties.populateMonthSelector();
+    Transacties.render();
+    Instellingen.render();
+  }
+
+  function query(sql, params = []) {
+    try {
+      const stmt = db.prepare(sql);
+      stmt.bind(params);
+      const rows = [];
+      while (stmt.step()) rows.push(stmt.getAsObject());
+      stmt.free();
+      return rows;
+    } catch(e) {
+      console.error('DB query error:', e, sql);
+      return [];
+    }
+  }
+
+  function run(sql, params = []) {
+    try { db.run(sql, params); } catch(e) { console.error('DB run error:', e); }
+  }
+
+  function exportSqlite() {
+    const data = db.export();
+    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = CONFIG.DB_FILENAME; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function save() {
+    // Lokaal opslaan via download
+    exportSqlite();
+    alert('Database opgeslagen als ' + CONFIG.DB_FILENAME + '\n\nSla dit bestand op in je Google Drive map als backup.');
+  }
+
+  function reset() {
+    if (confirm('Weet je zeker dat je alle data wilt verwijderen? Dit kan niet ongedaan worden gemaakt.')) {
+      createNew();
+    }
+  }
+
+  function isReady() { return db !== null; }
+
+  return { init, createNew, loadFromFile, loadFromFileInput, query, run, exportSqlite, save, reset, isReady };
+})();
+
+// ============================================================
+// SECTIE: GOOGLE DRIVE INTEGRATIE
+// ============================================================
+// SETUP INSTRUCTIES:
+// 1. Ga naar https://console.cloud.google.com
+// 2. Maak een project aan: "vaste-lasten-dashboard"
+// 3. Zet Google Drive API aan via APIs & Services > Library
+// 4. Maak OAuth Client ID aan (Web application)
+// 5. Voeg toe aan Authorised JavaScript origins: https://iceburg1991.github.io
+// 6. Plak je Client ID in CONFIG.GOOGLE_CLIENT_ID bovenaan dit bestand
+const GoogleDrive = (() => {
+  let accessToken = null;
+  let fileId = null;
+
+  function connect() {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: CONFIG.GOOGLE_CLIENT_ID,
+      scope: CONFIG.GOOGLE_DRIVE_SCOPE,
+      callback: async (response) => {
+        if (response.error) { alert('Google Drive verbinding mislukt: ' + response.error); return; }
+        accessToken = response.access_token;
+        updateStatus(true);
+        await findOrCreateFile();
+      }
+    });
+    client.requestAccessToken();
+  }
+
+  async function findOrCreateFile() {
+    // Zoek bestaand sqlite bestand in Drive
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${CONFIG.DB_FILENAME}'&spaces=drive&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await res.json();
+    if (data.files && data.files.length > 0) {
+      fileId = data.files[0].id;
+      await downloadFromDrive();
+    } else {
+      // Eerste keer: maak nieuw bestand
+      DB.createNew();
+      await uploadToDrive();
+    }
+  }
+
+  async function downloadFromDrive() {
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const buffer = await res.arrayBuffer();
+    // Laad in sql.js via FileInput simulatie
+    const arr = new Uint8Array(buffer);
+    const SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}` });
+    // DB intern updaten
+    window._driveDb = new SQL.Database(arr);
+    DB.showApp && DB.showApp();
+  }
+
+  async function uploadToDrive() {
+    if (!accessToken) return;
+    const data = DB.exportSqlite ? DB.exportRaw() : null;
+    if (!data) return;
+
+    const metadata = { name: CONFIG.DB_FILENAME, mimeType: 'application/octet-stream' };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', new Blob([data], { type: 'application/octet-stream' }));
+
+    const url = fileId
+      ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
+      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    const method = fileId ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, { method, headers: { Authorization: `Bearer ${accessToken}` }, body: form });
+    const result = await res.json();
+    if (!fileId) fileId = result.id;
+  }
+
+  function updateStatus(connected) {
+    const el = document.getElementById('drive-status');
+    if (connected) {
+      el.innerHTML = '<span class="status-dot connected"></span>Google Drive';
+    }
+  }
+
+  return { connect, uploadToDrive };
+})();
+
+// ============================================================
+// SECTIE: CSV IMPORT & PARSING (Rabobank formaat)
+// ============================================================
+// Rabobank CSV kolommen:
+// IBAN/BBAN, Munt, BIC, Volgnr, Datum, Rentedatum,
+// Beginbalans, Eindbalans, Tegenrekening IBAN/BBAN,
+// Naam tegenpartij, P/C Code, Bedrag, Tag, Omschrijving-1..6
+const CSV = (() => {
+  let parsedRows = [];
+  let reviewItems = [];
+
+  function openImportModal() {
+    parsedRows = [];
+    reviewItems = [];
+    document.getElementById('csv-file-input').value = '';
+    document.getElementById('import-preview').style.display = 'none';
+    document.getElementById('review-section').style.display = 'none';
+    document.getElementById('btn-import-confirm').disabled = true;
+    document.getElementById('csv-file-input').onchange = onFileSelected;
+    UI.openModal('modal-import');
+  }
+
+  async function onFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    parsedRows = parseRabobankCSV(text);
+
+    // Filter duplicaten
+    const existing = DB.query('SELECT datum, omschrijving, bedrag FROM transacties');
+    const existingKeys = new Set(existing.map(r => `${r.datum}|${r.omschrijving}|${r.bedrag}`));
+    const newRows = parsedRows.filter(r => !existingKeys.has(`${r.datum}|${r.omschrijving}|${r.bedrag}`));
+
+    document.getElementById('import-preview-text').textContent =
+      `${newRows.length} nieuwe transacties gevonden (${parsedRows.length - newRows.length} duplicaten overgeslagen)`;
+    document.getElementById('import-preview').style.display = 'block';
+    parsedRows = newRows;
+
+    // Auto-detectie terugkerende posten
+    reviewItems = detectRecurring(newRows);
+    if (reviewItems.length > 0) {
+      renderReview(reviewItems);
+      document.getElementById('review-section').style.display = 'block';
+      document.getElementById('review-count').textContent = reviewItems.length;
+    }
+
+    document.getElementById('btn-import-confirm').disabled = false;
+  }
+
+  function parseRabobankCSV(text) {
+    const lines = text.trim().split('\n');
+    const rows = [];
+    // Sla header over
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i]);
+      if (cols.length < 12) continue;
+      const bedragStr = cols[11]?.replace(',', '.').replace('"', '') || '0';
+      const type = cols[10]?.trim() === 'C' ? 'credit' : 'debit';
+      const omschrijving = [cols[13], cols[14], cols[15]].filter(Boolean).join(' ').trim()
+        || cols[9]?.trim() || 'Onbekend';
+      rows.push({
+        datum: cols[4]?.trim().replace(/"/g, '') || '',
+        omschrijving: omschrijving.replace(/"/g, '').substring(0, 200),
+        tegenrekening: cols[8]?.trim().replace(/"/g, '') || '',
+        bedrag: Math.abs(parseFloat(bedragStr) || 0),
+        type,
+      });
+    }
+    return rows.filter(r => r.datum && r.bedrag > 0);
+  }
+
+  function parseCSVLine(line) {
+    // Rabobank CSV is komma-gescheiden, met quotes rond velden
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQuotes = !inQuotes; }
+      else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+      else { current += ch; }
+    }
+    result.push(current);
+    return result;
+  }
+
+  // ============================================================
+  // SECTIE: AUTO-DETECTIE TERUGKERENDE POSTEN
+  // ============================================================
+  function detectRecurring(newRows) {
+    // Haal alle historische transacties op voor vergelijking
+    const historical = DB.query('SELECT omschrijving, tegenrekening, COUNT(*) as cnt FROM transacties WHERE type="debit" GROUP BY tegenrekening, omschrijving');
+    const knownIbans = new Set(DB.query('SELECT iban FROM vaste_posten WHERE iban IS NOT NULL').map(r => r.iban));
+    const knownTerms = DB.query('SELECT zoekterm FROM vaste_posten WHERE zoekterm IS NOT NULL').map(r => r.zoekterm?.toUpperCase());
+
+    const twijfelgevallen = [];
+    const seen = new Set();
+
+    for (const row of newRows) {
+      if (row.type !== 'debit') continue;
+      const key = row.tegenrekening || row.omschrijving.substring(0, 30);
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      // Sla over als al bekend als vaste post
+      if (knownIbans.has(row.tegenrekening)) continue;
+      if (knownTerms.some(t => t && row.omschrijving.toUpperCase().includes(t))) continue;
+
+      // Check of dit historisch meerdere keren voorkwam
+      const hist = historical.find(h =>
+        (row.tegenrekening && h.tegenrekening === row.tegenrekening) ||
+        h.omschrijving?.substring(0, 20) === row.omschrijving.substring(0, 20)
+      );
+
+      if (hist && hist.cnt >= CONFIG.RECURRENCE_MIN_COUNT) {
+        twijfelgevallen.push({ ...row, histCount: hist.cnt });
+      }
+    }
+    return twijfelgevallen;
+  }
+
+  function renderReview(items) {
+    const cats = DB.query('SELECT id, naam FROM categorieen');
+    const catOptions = cats.map(c => `<option value="${c.id}">${c.naam}</option>`).join('');
+    const freqOptions = `
+      <option value="12">Maandelijks</option>
+      <option value="10">10× per jaar</option>
+      <option value="6">Halfjaarlijks</option>
+      <option value="4">Kwartaal</option>
+      <option value="1">Jaarlijks</option>
+    `;
+
+    const html = items.map((item, i) => `
+      <div class="review-item" id="review-${i}">
+        <div class="review-item-name">${item.omschrijving.substring(0, 60)}</div>
+        <div class="review-item-meta">
+          ${item.tegenrekening || 'onbekend IBAN'} · €${item.bedrag.toFixed(2)} · ${item.histCount}× eerder gezien
+        </div>
+        <div class="review-item-actions">
+          <select class="form-select" id="rev-cat-${i}" style="width:140px;">${catOptions}</select>
+          <select class="form-select" id="rev-freq-${i}" style="width:160px;">${freqOptions}</select>
+          <button class="btn small primary" onclick="CSV.acceptReview(${i})">✓ Vaste last</button>
+          <button class="btn small" onclick="CSV.rejectReview(${i})">Overslaan</button>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('review-items').innerHTML = html;
+  }
+
+  function acceptReview(i) {
+    const item = reviewItems[i];
+    const catId = document.getElementById(`rev-cat-${i}`).value;
+    const freq = document.getElementById(`rev-freq-${i}`).value;
+    // Sla op als vaste post
+    DB.run(
+      'INSERT INTO vaste_posten (naam, categorie_id, frequentie, bedrag, iban, zoekterm) VALUES (?,?,?,?,?,?)',
+      [item.omschrijving.substring(0, 80), parseInt(catId), parseInt(freq), item.bedrag,
+       item.tegenrekening || null, item.omschrijving.substring(0, 20).toUpperCase()]
+    );
+    document.getElementById(`review-${i}`).style.opacity = '0.4';
+    document.getElementById(`review-${i}`).style.pointerEvents = 'none';
+  }
+
+  function rejectReview(i) {
+    document.getElementById(`review-${i}`).style.display = 'none';
+  }
+
+  function confirmImport() {
+    // Importeer alle nieuwe transacties
+    const posten = DB.query('SELECT id, iban, zoekterm, categorie_id FROM vaste_posten');
+    let imported = 0;
+    for (const row of parsedRows) {
+      // Match met vaste post op IBAN of zoekterm
+      let postId = null, catId = null;
+      for (const post of posten) {
+        const ibanMatch = post.iban && row.tegenrekening === post.iban;
+        const termMatch = post.zoekterm && row.omschrijving.toUpperCase().includes(post.zoekterm.toUpperCase());
+        if (ibanMatch || termMatch) { postId = post.id; catId = post.categorie_id; break; }
+      }
+      DB.run(
+        'INSERT INTO transacties (datum, omschrijving, tegenrekening, bedrag, type, categorie_id, post_id) VALUES (?,?,?,?,?,?,?)',
+        [row.datum, row.omschrijving, row.tegenrekening, row.bedrag, row.type, catId, postId]
+      );
+      imported++;
+    }
+    UI.closeModal('modal-import');
+    Dashboard.populateMonthSelector();
+    Dashboard.render();
+    Posten.render();
+    Transacties.populateMonthSelector();
+    Transacties.render();
+    alert(`${imported} transacties geïmporteerd.`);
+  }
+
+  return { openImportModal, confirmImport, acceptReview, rejectReview };
+})();
+
+// ============================================================
+// SECTIE: NORMALISATIE NAAR MAANDBEDRAG
+// ============================================================
+const Normalisatie = (() => {
+  // Bereken genormaliseerd maandbedrag: (bedrag × frequentie) / 12
+  function naarMaand(bedrag, frequentie) {
+    return (bedrag * frequentie) / 12;
+  }
+
+  // Haal alle vaste posten op met genormaliseerd maandbedrag
+  function getPostenGenormaliseerd() {
+    const posten = DB.query(`
+      SELECT vp.*, c.naam as categorie_naam
+      FROM vaste_posten vp
+      LEFT JOIN categorieen c ON c.id = vp.categorie_id
+    `);
+    return posten.map(p => ({
+      ...p,
+      maandbedrag: naarMaand(p.bedrag, p.frequentie)
+    }));
+  }
+
+  // Totaal genormaliseerde vaste lasten per maand
+  function totaalPerMaand() {
+    const posten = getPostenGenormaliseerd();
+    return posten.reduce((sum, p) => sum + p.maandbedrag, 0);
+  }
+
+  // Werkelijke uitgaven per maand (uit transacties)
+  function werkelijkPerMaand(jaar, maand) {
+    const maandStr = `${jaar}-${String(maand).padStart(2,'0')}`;
+    const rows = DB.query(
+      `SELECT SUM(bedrag) as totaal FROM transacties
+       WHERE type='debit' AND datum LIKE ?`,
+      [`${maandStr}%`]
+    );
+    return rows[0]?.totaal || 0;
+  }
+
+  // Werkelijke vaste lasten per maand (alleen gematchte transacties)
+  function vasteLastenPerMaand(jaar, maand) {
+    const maandStr = `${jaar}-${String(maand).padStart(2,'0')}`;
+    const rows = DB.query(
+      `SELECT SUM(t.bedrag) as totaal FROM transacties t
+       WHERE t.type='debit' AND t.post_id IS NOT NULL AND t.datum LIKE ?`,
+      [`${maandStr}%`]
+    );
+    return rows[0]?.totaal || 0;
+  }
+
+  return { naarMaand, getPostenGenormaliseerd, totaalPerMaand, werkelijkPerMaand, vasteLastenPerMaand };
+})();
+
+// ============================================================
+// SECTIE: DASHBOARD / UI RENDERING
+// ============================================================
+const Dashboard = (() => {
+  let trendChart = null;
+  let catChart = null;
+
+  function populateMonthSelector() {
+    // Haal unieke maanden op uit transacties
+    const rows = DB.query(`SELECT DISTINCT substr(datum,1,7) as ym FROM transacties ORDER BY ym DESC`);
+    const sel = document.getElementById('month-select');
+    if (rows.length === 0) { sel.innerHTML = '<option>Geen data</option>'; return; }
+    sel.innerHTML = rows.map(r => `<option value="${r.ym}">${formatYM(r.ym)}</option>`).join('');
+  }
+
+  function formatYM(ym) {
+    const [y, m] = ym.split('-');
+    const months = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+    return `${months[parseInt(m)-1]} ${y}`;
+  }
+
+  function render() {
+    if (!DB.isReady()) return;
+    const ym = document.getElementById('month-select')?.value;
+    if (!ym || ym === 'Geen data') { renderEmpty(); return; }
+
+    const [jaar, maand] = ym.split('-').map(Number);
+
+    // Vorige maand
+    const prevDate = new Date(jaar, maand - 2, 1);
+    const prevYM = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
+
+    // Zelfde maand vorig jaar
+    const yoyYM = `${jaar-1}-${String(maand).padStart(2,'0')}`;
+
+    const huidigVast = Normalisatie.vasteLastenPerMaand(jaar, maand);
+    const huidigVariabel = Normalisatie.werkelijkPerMaand(jaar, maand) - huidigVast;
+    const prevVast = Normalisatie.vasteLastenPerMaand(prevDate.getFullYear(), prevDate.getMonth()+1);
+    const yoyVast = Normalisatie.vasteLastenPerMaand(jaar-1, maand);
+    const genormaliseerd = Normalisatie.totaalPerMaand();
+
+    renderKPIs({ huidigVast, huidigVariabel, prevVast, yoyVast, genormaliseerd });
+    renderTrendChart();
+    renderCatChart(jaar, maand);
+    renderAfwijkingen(jaar, maand, prevYM, yoyYM);
+  }
+
+  function renderEmpty() {
+    document.getElementById('kpi-grid').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📊</div><p>Importeer eerst een bankafschrift om data te zien.</p></div>';
+  }
+
+  function renderKPIs({ huidigVast, huidigVariabel, prevVast, yoyVast, genormaliseerd }) {
+    const momDelta = prevVast > 0 ? ((huidigVast - prevVast) / prevVast) * 100 : 0;
+    const yoyDelta = yoyVast > 0 ? ((huidigVast - yoyVast) / yoyVast) * 100 : 0;
+
+    const kpis = [
+      {
+        label: 'Vaste lasten (werkelijk)',
+        value: `€${huidigVast.toFixed(0)}`,
+        delta: `MoM: ${momDelta >= 0 ? '+' : ''}${momDelta.toFixed(1)}%`,
+        deltaClass: momDelta > CONFIG.DEVIATION_THRESHOLD * 100 ? 'up' : momDelta < -CONFIG.DEVIATION_THRESHOLD * 100 ? 'down' : '',
+        color: '',
+      },
+      {
+        label: 'Genormaliseerd / maand',
+        value: `€${genormaliseerd.toFixed(0)}`,
+        delta: 'Gebaseerd op alle vaste posten',
+        deltaClass: '',
+        color: '',
+      },
+      {
+        label: 'Variabele kosten',
+        value: `€${Math.max(0, huidigVariabel).toFixed(0)}`,
+        delta: 'Niet-vaste uitgaven deze maand',
+        deltaClass: '',
+        color: 'orange',
+      },
+      {
+        label: 'YoY verandering',
+        value: `${yoyDelta >= 0 ? '+' : ''}${yoyDelta.toFixed(1)}%`,
+        delta: yoyVast > 0 ? `vs €${yoyVast.toFixed(0)} vorig jaar` : 'Geen data vorig jaar',
+        deltaClass: yoyDelta > CONFIG.DEVIATION_THRESHOLD * 100 ? 'up' : 'down',
+        color: yoyDelta > CONFIG.DEVIATION_THRESHOLD * 100 ? 'red' : '',
+      },
+    ];
+
+    document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+      <div class="kpi-card ${k.color}">
+        <div class="kpi-label">${k.label}</div>
+        <div class="kpi-value">${k.value}</div>
+        <div class="kpi-delta ${k.deltaClass}">${k.delta}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderTrendChart() {
+    // Laatste 12 maanden
+    const rows = DB.query(`
+      SELECT substr(datum,1,7) as ym, SUM(bedrag) as totaal
+      FROM transacties WHERE type='debit' AND post_id IS NOT NULL
+      GROUP BY ym ORDER BY ym DESC LIMIT 12
+    `).reverse();
+
+    const labels = rows.map(r => formatYM(r.ym));
+    const data = rows.map(r => parseFloat(r.totaal?.toFixed(2) || 0));
+    const genorm = Normalisatie.totaalPerMaand();
+
+    if (trendChart) trendChart.destroy();
+    trendChart = new Chart(document.getElementById('chart-trend'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Werkelijke vaste lasten',
+            data,
+            backgroundColor: 'rgba(79, 255, 176, 0.3)',
+            borderColor: 'rgba(79, 255, 176, 0.8)',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'Genormaliseerd gemiddelde',
+            data: labels.map(() => genorm),
+            type: 'line',
+            borderColor: '#ffd93d',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+          }
+        ]
+      },
+      options: chartOptions('€')
+    });
+  }
+
+  function renderCatChart(jaar, maand) {
+    const maandStr = `${jaar}-${String(maand).padStart(2,'0')}`;
+    const rows = DB.query(`
+      SELECT c.naam as cat, SUM(t.bedrag) as totaal
+      FROM transacties t
+      JOIN vaste_posten vp ON vp.id = t.post_id
+      LEFT JOIN categorieen c ON c.id = vp.categorie_id
+      WHERE t.type='debit' AND t.datum LIKE ?
+      GROUP BY c.naam
+    `, [`${maandStr}%`]);
+
+    const colors = ['#4fffb0','#ffd93d','#ff6b6b','#74b9ff','#a29bfe','#fd79a8'];
+
+    if (catChart) catChart.destroy();
+    if (rows.length === 0) return;
+
+    catChart = new Chart(document.getElementById('chart-cat'), {
+      type: 'doughnut',
+      data: {
+        labels: rows.map(r => r.cat || 'Overig'),
+        datasets: [{
+          data: rows.map(r => parseFloat(r.totaal?.toFixed(2) || 0)),
+          backgroundColor: colors.slice(0, rows.length),
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#6b7280', font: { family: 'DM Mono', size: 11 }, padding: 12 } },
+          tooltip: { callbacks: { label: ctx => ` €${ctx.parsed.toFixed(2)}` } }
+        }
+      }
+    });
+  }
+
+  function renderAfwijkingen(jaar, maand, prevYM, yoyYM) {
+    const maandStr = `${jaar}-${String(maand).padStart(2,'0')}`;
+    const posten = Normalisatie.getPostenGenormaliseerd();
+
+    const afwijkingen = [];
+
+    for (const post of posten) {
+      // Werkelijk bedrag huidige maand
+      const huidig = DB.query(
+        'SELECT SUM(bedrag) as s FROM transacties WHERE post_id=? AND datum LIKE ?',
+        [post.id, `${maandStr}%`]
+      )[0]?.s || 0;
+
+      const prev = DB.query(
+        'SELECT SUM(bedrag) as s FROM transacties WHERE post_id=? AND datum LIKE ?',
+        [post.id, `${prevYM}%`]
+      )[0]?.s || 0;
+
+      const yoy = DB.query(
+        'SELECT SUM(bedrag) as s FROM transacties WHERE post_id=? AND datum LIKE ?',
+        [post.id, `${yoyYM}%`]
+      )[0]?.s || 0;
+
+      if (huidig === 0 && prev === 0) continue;
+
+      const momDelta = prev > 0 ? ((huidig - prev) / prev) : null;
+      const yoyDelta = yoy > 0 ? ((huidig - yoy) / yoy) : null;
+
+      const isAfwijking = (momDelta !== null && Math.abs(momDelta) > CONFIG.DEVIATION_THRESHOLD) ||
+                          (yoyDelta !== null && Math.abs(yoyDelta) > CONFIG.DEVIATION_THRESHOLD);
+      if (isAfwijking) {
+        afwijkingen.push({ post, huidig, prev, yoy, momDelta, yoyDelta });
+      }
+    }
+
+    document.getElementById('afwijkingen-count').textContent = afwijkingen.length;
+
+    const tbody = document.getElementById('afwijkingen-tbody');
+    if (afwijkingen.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Geen significante afwijkingen deze maand 🎉</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = afwijkingen.map(a => {
+      const momClass = a.momDelta > 0 ? 'up' : 'down';
+      const yoyClass = a.yoyDelta > 0 ? 'up' : 'down';
+      return `
+        <tr>
+          <td>${a.post.naam}</td>
+          <td><span class="cat-badge">${a.post.categorie_naam || 'Overig'}</span></td>
+          <td>€${a.prev.toFixed(2)}</td>
+          <td><strong>€${a.huidig.toFixed(2)}</strong></td>
+          <td>€${a.yoy.toFixed(2)}</td>
+          <td class="kpi-delta ${momClass}">${a.momDelta !== null ? (a.momDelta >= 0 ? '+' : '') + (a.momDelta*100).toFixed(1) + '%' : '—'}</td>
+          <td class="kpi-delta ${yoyClass}">${a.yoyDelta !== null ? (a.yoyDelta >= 0 ? '+' : '') + (a.yoyDelta*100).toFixed(1) + '%' : '—'}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function chartOptions(prefix = '') {
+    return {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#6b7280', font: { family: 'DM Mono', size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${prefix}${ctx.parsed.y?.toFixed(2) ?? ctx.parsed.toFixed(2)}` } }
+      },
+      scales: {
+        x: { ticks: { color: '#6b7280', font: { family: 'DM Mono', size: 11 } }, grid: { color: '#2a3045' } },
+        y: { ticks: { color: '#6b7280', font: { family: 'DM Mono', size: 11 }, callback: v => `€${v}` }, grid: { color: '#2a3045' } }
+      }
+    };
+  }
+
+  return { render, populateMonthSelector };
+})();
+
+// ============================================================
+// SECTIE: VASTE POSTEN BEHEER
+// ============================================================
+const Posten = (() => {
+  function render() {
+    const posten = Normalisatie.getPostenGenormaliseerd();
+    const tbody = document.getElementById('posten-tbody');
+    if (posten.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nog geen vaste posten. Importeer een afschrift of voeg handmatig toe.</td></tr>';
+      return;
+    }
+    const freqLabel = { 12: 'Maandelijks', 10: '10×/jaar', 6: 'Halfjaarlijks', 4: 'Kwartaal', 2: '2×/jaar', 1: 'Jaarlijks' };
+    tbody.innerHTML = posten.map(p => `
+      <tr>
+        <td>${p.naam}</td>
+        <td><span class="cat-badge">${p.categorie_naam || '—'}</span></td>
+        <td><span class="freq-badge">${freqLabel[p.frequentie] || p.frequentie + '×'}</span></td>
+        <td class="amount debit">€${p.bedrag.toFixed(2)}</td>
+        <td class="amount">€${p.maandbedrag.toFixed(2)}</td>
+        <td class="note-text">${p.notitie || ''}</td>
+        <td>
+          <button class="btn small" onclick="Posten.openModal(${p.id})">✏ Bewerken</button>
+          <button class="btn small danger" onclick="Posten.delete(${p.id})">✕</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function openModal(id = null) {
+    const cats = DB.query('SELECT id, naam FROM categorieen');
+    document.getElementById('post-cat').innerHTML = cats.map(c => `<option value="${c.id}">${c.naam}</option>`).join('');
+    document.getElementById('modal-post-title').textContent = id ? 'Vaste post bewerken' : 'Vaste post toevoegen';
+    document.getElementById('post-id').value = id || '';
+
+    if (id) {
+      const post = DB.query('SELECT * FROM vaste_posten WHERE id=?', [id])[0];
+      if (post) {
+        document.getElementById('post-naam').value = post.naam;
+        document.getElementById('post-cat').value = post.categorie_id;
+        document.getElementById('post-freq').value = post.frequentie;
+        document.getElementById('post-bedrag').value = post.bedrag;
+        document.getElementById('post-iban').value = post.iban || '';
+        document.getElementById('post-zoekterm').value = post.zoekterm || '';
+        document.getElementById('post-notitie').value = post.notitie || '';
+      }
+    } else {
+      ['post-naam','post-bedrag','post-iban','post-zoekterm','post-notitie'].forEach(id => document.getElementById(id).value = '');
+    }
+    UI.openModal('modal-post');
+  }
+
+  function save() {
+    const id = document.getElementById('post-id').value;
+    const naam = document.getElementById('post-naam').value.trim();
+    const catId = document.getElementById('post-cat').value;
+    const freq = parseInt(document.getElementById('post-freq').value);
+    const bedrag = parseFloat(document.getElementById('post-bedrag').value);
+    const iban = document.getElementById('post-iban').value.trim() || null;
+    const zoekterm = document.getElementById('post-zoekterm').value.trim() || null;
+    const notitie = document.getElementById('post-notitie').value.trim() || null;
+
+    if (!naam || isNaN(bedrag)) { alert('Naam en bedrag zijn verplicht.'); return; }
+
+    if (id) {
+      DB.run('UPDATE vaste_posten SET naam=?, categorie_id=?, frequentie=?, bedrag=?, iban=?, zoekterm=?, notitie=? WHERE id=?',
+        [naam, catId, freq, bedrag, iban, zoekterm, notitie, parseInt(id)]);
+    } else {
+      DB.run('INSERT INTO vaste_posten (naam, categorie_id, frequentie, bedrag, iban, zoekterm, notitie) VALUES (?,?,?,?,?,?,?)',
+        [naam, catId, freq, bedrag, iban, zoekterm, notitie]);
+    }
+    UI.closeModal('modal-post');
+    render();
+    Dashboard.render();
+  }
+
+  function deletePost(id) {
+    if (confirm('Vaste post verwijderen?')) {
+      DB.run('DELETE FROM vaste_posten WHERE id=?', [id]);
+      render();
+      Dashboard.render();
+    }
+  }
+
+  return { render, openModal, save, delete: deletePost };
+})();
+
+// ============================================================
+// SECTIE: TRANSACTIES OVERZICHT
+// ============================================================
+const Transacties = (() => {
+  function populateMonthSelector() {
+    const rows = DB.query(`SELECT DISTINCT substr(datum,1,7) as ym FROM transacties ORDER BY ym DESC`);
+    const sel = document.getElementById('trans-month-select');
+    if (rows.length === 0) { sel.innerHTML = '<option>Geen data</option>'; return; }
+    sel.innerHTML = rows.map(r => `<option value="${r.ym}">${r.ym}</option>`).join('');
+  }
+
+  function render() {
+    const ym = document.getElementById('trans-month-select')?.value;
+    if (!ym || ym === 'Geen data') return;
+    const rows = DB.query(`
+      SELECT t.*, c.naam as cat_naam
+      FROM transacties t LEFT JOIN categorieen c ON c.id = t.categorie_id
+      WHERE t.datum LIKE ? ORDER BY t.datum DESC
+    `, [`${ym}%`]);
+
+    const tbody = document.getElementById('trans-tbody');
+    if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Geen transacties</td></tr>'; return; }
+
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.datum}</td>
+        <td>${r.omschrijving.substring(0, 50)}</td>
+        <td style="color:var(--text-muted);font-size:12px">${r.tegenrekening || '—'}</td>
+        <td class="amount ${r.type}">€${r.bedrag.toFixed(2)}</td>
+        <td><span class="cat-badge">${r.cat_naam || '—'}</span></td>
+        <td><span class="freq-badge">${r.post_id ? '📌 Vast' : r.type === 'credit' ? '↑ Inkomst' : '○ Variabel'}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  return { populateMonthSelector, render };
+})();
+
+// ============================================================
+// SECTIE: INSTELLINGEN (categorieën)
+// ============================================================
+const Instellingen = (() => {
+  function render() {
+    const cats = DB.query('SELECT * FROM categorieen ORDER BY naam');
+    const tbody = document.getElementById('cat-tbody');
+    tbody.innerHTML = cats.map(c => `
+      <tr>
+        <td>${c.naam}</td>
+        <td><button class="btn small danger" onclick="Instellingen.deleteCat(${c.id}, '${c.naam}')">Verwijderen</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function addCatModal() {
+    document.getElementById('cat-naam').value = '';
+    UI.openModal('modal-cat');
+  }
+
+  function saveCat() {
+    const naam = document.getElementById('cat-naam').value.trim();
+    if (!naam) return;
+    DB.run('INSERT OR IGNORE INTO categorieen (naam) VALUES (?)', [naam]);
+    UI.closeModal('modal-cat');
+    render();
+  }
+
+  function deleteCat(id, naam) {
+    if (confirm(`Categorie "${naam}" verwijderen? Gekoppelde posten krijgen geen categorie.`)) {
+      DB.run('UPDATE vaste_posten SET categorie_id=NULL WHERE categorie_id=?', [id]);
+      DB.run('DELETE FROM categorieen WHERE id=?', [id]);
+      render();
+    }
+  }
+
+  return { render, addCatModal, saveCat, deleteCat };
+})();
+
+// ============================================================
+// SECTIE: UI HELPERS (modals, tabs, navigatie)
+// ============================================================
+const UI = (() => {
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const names = ['dashboard','posten','transacties','instellingen'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => {
+      c.classList.toggle('active', c.id === `tab-${name}`);
+    });
+  }
+
+  function connectGoogleDrive() {
+    // Laad Google Identity Services script dynamisch
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = () => GoogleDrive.connect();
+    script.onerror = () => alert('Google Drive kon niet geladen worden. Controleer je internetverbinding.');
+    document.head.appendChild(script);
+  }
+
+  return { openModal, closeModal, switchTab, connectGoogleDrive };
+})();
+
+// ============================================================
+// SECTIE: INITIALISATIE
+// ============================================================
+(async () => {
+  await DB.init();
+  // Sluit modals bij klik buiten modal
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  });
+})();
+</script>
+</body>
+</html>
