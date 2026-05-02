@@ -21,34 +21,15 @@ const GoogleDrive = (() => {
   const DB_FILENAME = 'vaste-lasten.sqlite';
 
   // Initiate Google OAuth login
-  // Pre-load the Google Identity Services script in the background on page load.
-  // This way the OAuth popup appears faster when the user clicks reconnect.
+  // Pre-load the Google Identity Services script in the background.
+  // This makes the OAuth popup appear faster when the user clicks reconnect.
+  // No token request is made here — that requires explicit user interaction.
   function preload() {
     if (!wasConnected()) return;
-    const script   = document.createElement('script');
-    script.src     = 'https://accounts.google.com/gsi/client';
-    script.async   = true;
-    script.defer   = true;
-    script.onload  = () => {
-      // Script is ready — attempt a silent token request (no popup)
-      // This works when the user has an active Google session in the browser
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope:     SCOPE,
-        prompt:    '',
-        callback:  async response => {
-          if (response.error || !response.access_token) return; // Silent failed, user must click reconnect
-          accessToken = response.access_token;
-          _updateStatus(true);
-          // Hide the reconnect button since we connected automatically
-          const el = document.getElementById('reconnect-section');
-          if (el) el.style.display = 'none';
-          await _findOrCreateFile();
-        },
-      });
-      // requestAccessToken with empty prompt — shows popup only if no active session
-      client.requestAccessToken({ prompt: '' });
-    };
+    if (document.querySelector('script[src*="accounts.google.com"]')) return; // Already loading
+    const script = document.createElement('script');
+    script.src   = 'https://accounts.google.com/gsi/client';
+    script.async = true;
     document.head.appendChild(script);
   }
 
@@ -147,11 +128,7 @@ const GoogleDrive = (() => {
   }
 
   function _updateStatus(connected) {
-    const el = document.getElementById('drive-status');
-    if (connected) {
-      el.innerHTML = '<i class="fa-solid fa-cloud"></i> Google Drive';
-      el.classList.add('connected');
-    }
+    if (connected) UI.updateDriveStatus(true);
   }
 
   function isConnected() {

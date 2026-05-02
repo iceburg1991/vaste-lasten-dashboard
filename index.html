@@ -81,21 +81,37 @@
 
   <!-- Topbar -->
   <div class="topbar">
-    <div class="topbar-title">
-      <i class="fa-solid fa-chart-pie"></i> Vaste Lasten
+    <!-- Floating orbs for depth -->
+    <div class="topbar-orb topbar-orb-1"></div>
+    <div class="topbar-orb topbar-orb-2"></div>
+    <div class="topbar-orb topbar-orb-3"></div>
+
+    <div class="topbar-inner">
+      <!-- Logo -->
+      <div class="topbar-logo">
+        <div class="topbar-logo-mark">
+          <svg viewBox="0 0 15 15" fill="none">
+            <path d="M7.5 1.5L12.5 4.5V10.5L7.5 13.5L2.5 10.5V4.5L7.5 1.5Z" stroke="#c9a84c" stroke-width="1.2"/>
+            <circle cx="7.5" cy="7.5" r="2" fill="#c9a84c"/>
+          </svg>
+        </div>
+        <span class="topbar-logo-text">Vaste<em>Lasten</em></span>
+      </div>
+
+      <!-- Right actions -->
+      <div class="topbar-actions">
+        <span id="drive-status" class="drive-status">
+          <span class="drive-status-dot" style="display:none;"></span>
+          <i class="fa-solid fa-circle-dot" style="font-size:5px;"></i> Lokaal
+        </span>
+        <button class="btn btn-ghost" onclick="CSVImport.openModal()">
+          <i class="fa-solid fa-file-import"></i> Afschrift importeren
+        </button>
+        <button class="btn btn-gold" onclick="DB.save()">
+          <i class="fa-solid fa-floppy-disk"></i> Opslaan
+        </button>
+      </div>
     </div>
-    <div class="topbar-actions">
-      <span id="drive-status">
-        <i class="fa-solid fa-circle-dot"></i> Lokaal
-      </span>
-      <button class="btn" onclick="CSVImport.openModal()">
-        <i class="fa-solid fa-file-import"></i> Afschrift importeren
-      </button>
-      <button class="btn" onclick="DB.save()">
-        <i class="fa-solid fa-floppy-disk"></i> Opslaan
-      </button>
-    </div>
-  </div>
 
   <!-- Main content -->
   <div class="main">
@@ -103,19 +119,54 @@
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn active" data-tab="dashboard" onclick="UI.switchTab('dashboard')">
-        <i class="fa-solid fa-gauge-high"></i> Dashboard
+        <div class="tab-spotlight"></div>
+        <div class="tab-glow"></div>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>Dashboard</span>
       </button>
+      <div class="tab-sep"></div>
       <button class="tab-btn" data-tab="posts" onclick="UI.switchTab('posts')">
-        <i class="fa-solid fa-list"></i> Vaste Posten
+        <div class="tab-spotlight"></div>
+        <div class="tab-glow"></div>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+          <circle cx="3" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+          <circle cx="3" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+          <circle cx="3" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>Vaste Posten</span>
       </button>
+      <div class="tab-sep"></div>
       <button class="tab-btn" data-tab="transactions" onclick="UI.switchTab('transactions')">
-        <i class="fa-solid fa-receipt"></i> Transacties
+        <div class="tab-spotlight"></div>
+        <div class="tab-glow"></div>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4 2h16v20l-2-1-2 1-2-1-2 1-2-1-2 1V2z"/>
+          <line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        <span>Transacties</span>
       </button>
+      <div class="tab-sep"></div>
       <button class="tab-btn" data-tab="labels" onclick="UI.switchTab('labels')">
-        <i class="fa-solid fa-tags"></i> Labels
+        <div class="tab-spotlight"></div>
+        <div class="tab-glow"></div>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+          <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>Labels</span>
       </button>
+      <div class="tab-sep"></div>
       <button class="tab-btn" data-tab="settings" onclick="UI.switchTab('settings')">
-        <i class="fa-solid fa-gear"></i> Instellingen
+        <div class="tab-spotlight"></div>
+        <div class="tab-glow"></div>
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        <span>Instellingen</span>
       </button>
     </div>
 
@@ -283,6 +334,7 @@
     </div>
 
   </div><!-- /main -->
+  <div class="content-bg"><div class="content-orb content-orb-1"></div><div class="content-orb content-orb-2"></div><div class="content-orb content-orb-3"></div></div>
 </div><!-- /app -->
 
 <!-- ============================================================

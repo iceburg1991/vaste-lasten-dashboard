@@ -27,6 +27,15 @@ const UI = (() => {
     });
   }
 
+  function updateDriveStatus(connected) {
+    const el = document.getElementById('drive-status');
+    if (!el) return;
+    if (connected) {
+      el.className = 'drive-status connected';
+      el.innerHTML = '<span class="drive-status-dot"></span> Google Drive';
+    }
+  }
+
   // ---- Toast notifications ----
 
   function toast(message, duration = 3000) {
