@@ -11,17 +11,43 @@ const Labels = (() => {
   // ---- Matching ----
 
   // Find the best matching label for a transaction
-  function findMatch(counterparty, description) {
-    const all = DB.query('SELECT * FROM labels');
+  // Check if two amounts match within a 20% margin
+  function _amountMatches(transAmount, labelAmount) {
+    if (!labelAmount || labelAmount === 0) return true; // No amount set on label — skip check
+    const margin = labelAmount * 0.20;
+    return Math.abs(transAmount - labelAmount) <= margin;
+  }
+
+  // Find a matching label for a transaction.
+  // Priority 1: IBAN + search term in description + amount within 20% margin
+  // Priority 2: IBAN + amount within 20% margin (only when no search term is set on the label)
+  // Priority 3: search term in description only (fallback, no IBAN or amount check)
+  function findMatch(counterparty, description, amount) {
+    const all       = DB.query('SELECT * FROM labels');
     const descUpper = description?.toUpperCase() || '';
 
-    // Priority 1: IBAN match
     if (counterparty) {
-      const byIban = all.find(l => l.iban && l.iban === counterparty);
+      // Priority 1: IBAN + search term + amount — most specific match
+      const byIbanAndTerm = all.find(l =>
+        l.iban &&
+        l.iban === counterparty &&
+        l.search_term &&
+        descUpper.includes(l.search_term.toUpperCase()) &&
+        _amountMatches(amount, l.amount)
+      );
+      if (byIbanAndTerm) return byIbanAndTerm;
+
+      // Priority 2: IBAN + amount — only when label has no search term
+      const byIban = all.find(l =>
+        l.iban &&
+        l.iban === counterparty &&
+        !l.search_term &&
+        _amountMatches(amount, l.amount)
+      );
       if (byIban) return byIban;
     }
 
-    // Priority 2: search term match
+    // Priority 3: search term only (description is unique enough)
     const byTerm = all.find(l =>
       l.search_term && descUpper.includes(l.search_term.toUpperCase())
     );
@@ -31,10 +57,10 @@ const Labels = (() => {
   // Apply labels to all unmatched transactions (run after import or label save)
   function applyToAll() {
     const unmatched = DB.query(
-      'SELECT id, counterparty, description FROM transactions WHERE label_id IS NULL'
+      'SELECT id, counterparty, description, amount FROM transactions WHERE label_id IS NULL'
     );
     for (const t of unmatched) {
-      const label = findMatch(t.counterparty, t.description);
+      const label = findMatch(t.counterparty, t.description, t.amount);
       if (label) {
         DB.run(
           'UPDATE transactions SET label_id = ?, category_id = COALESCE(category_id, ?) WHERE id = ?',
@@ -103,6 +129,7 @@ const Labels = (() => {
         document.getElementById('label-name').value        = label.name;
         document.getElementById('label-iban').value        = label.iban        || '';
         document.getElementById('label-searchterm').value  = label.search_term || '';
+        document.getElementById('label-amount').value      = label.amount      || '';
         document.getElementById('label-cat').value         = label.category_id || '';
       }
     } else {
@@ -120,6 +147,7 @@ const Labels = (() => {
     const name       = document.getElementById('label-name').value.trim();
     const iban       = document.getElementById('label-iban').value.trim()       || null;
     const searchTerm = document.getElementById('label-searchterm').value.trim() || null;
+    const amount     = parseFloat(document.getElementById('label-amount').value) || null;
     const catId      = document.getElementById('label-cat').value               || null;
 
     if (!name) { UI.toast('Naam is verplicht.'); return; }
@@ -127,15 +155,15 @@ const Labels = (() => {
 
     if (id) {
       DB.run(
-        'UPDATE labels SET name=?, iban=?, search_term=?, category_id=? WHERE id=?',
-        [name, iban, searchTerm, catId, parseInt(id)]
+        'UPDATE labels SET name=?, iban=?, search_term=?, amount=?, category_id=? WHERE id=?',
+        [name, iban, searchTerm, amount, catId, parseInt(id)]
       );
       // Re-apply this label to existing transactions
       DB.run('UPDATE transactions SET label_id = NULL WHERE label_id = ?', [parseInt(id)]);
     } else {
       DB.run(
-        'INSERT INTO labels (name, iban, search_term, category_id) VALUES (?,?,?,?)',
-        [name, iban, searchTerm, catId]
+        'INSERT INTO labels (name, iban, search_term, amount, category_id) VALUES (?,?,?,?,?)',
+        [name, iban, searchTerm, amount, catId]
       );
     }
 
