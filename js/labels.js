@@ -24,7 +24,8 @@ const Labels = (() => {
   // Priority 3: search term in description only (fallback, no IBAN or amount check)
   function findMatch(counterparty, description, amount) {
     const all       = DB.query('SELECT * FROM labels');
-    const descUpper = description?.toUpperCase() || '';
+    // Normalize multiple spaces to single space before matching
+    const descUpper = (description?.replace(/\s+/g, ' ').toUpperCase()) || '';
 
     if (counterparty) {
       // Priority 1: IBAN + search term + amount — most specific match
@@ -153,8 +154,10 @@ const Labels = (() => {
     const id         = document.getElementById('label-id').value;
     const name       = document.getElementById('label-name').value.trim();
     const iban       = document.getElementById('label-iban').value.trim()       || null;
-    const searchTerm = document.getElementById('label-searchterm').value.trim() || null;
-    const amount     = parseFloat(document.getElementById('label-amount').value) || null;
+    // Normalize multiple spaces in search term to single space
+    const searchTerm = document.getElementById('label-searchterm').value.trim().replace(/\s+/g, ' ') || null;
+    const amountRaw  = document.getElementById('label-amount').value.replace(',', '.');
+    const amount     = parseFloat(amountRaw) || null;
     const catId      = document.getElementById('label-cat').value               || null;
 
     if (!name) { UI.toast('Naam is verplicht.'); return; }

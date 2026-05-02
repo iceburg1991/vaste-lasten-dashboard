@@ -121,10 +121,11 @@ const CSVImport = (() => {
       const type = amountVal < 0 ? 'debit' : 'credit';
 
       // Build description from description fields, fall back to counterparty name
-      const description = [cols[19], cols[20], cols[21]]
+      // Normalize multiple spaces (Rabobank pads fields to fixed width)
+      const description = ([cols[19], cols[20], cols[21]]
         .map(s => s?.trim()).filter(Boolean).join(' ').trim()
         || cols[9]?.trim()
-        || 'Onbekend';
+        || 'Onbekend').replace(/\s+/g, ' ');
 
       rows.push({
         sequenceNr:   cols[3]?.trim() || null,
@@ -341,7 +342,7 @@ const CSVImport = (() => {
       }
 
       // Match label by IBAN or search term
-      const label  = Labels.findMatch(row.counterparty, row.description);
+      const label  = Labels.findMatch(row.counterparty, row.description, row.amount);
       const labelId = label?.id || null;
       // Label category takes lower priority than post category
       if (!catId && label?.category_id) catId = label.category_id;
