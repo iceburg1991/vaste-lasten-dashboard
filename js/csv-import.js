@@ -272,9 +272,11 @@ const CSVImport = (() => {
           <select class="form-select" id="rev-cat-${i}" style="width:160px;">${catOptions}</select>
           <select class="form-select" id="rev-freq-${i}" style="width:180px;">${freqOptions}</select>
           <button class="btn btn-sm btn-primary" onclick="CSVImport.acceptReview(${i})">
-            <i class="fa-solid fa-check"></i> Vaste last
+            <i class="fa-solid fa-check"></i> Ja, vaste last
           </button>
-          <button class="btn btn-sm" onclick="CSVImport.rejectReview(${i})">Overslaan</button>
+          <button class="btn btn-sm btn-danger" onclick="CSVImport.rejectReview(${i})">
+            <i class="fa-solid fa-xmark"></i> Nee, geen vaste last
+          </button>
         </div>
       </div>
     `).join('');
@@ -306,9 +308,15 @@ const CSVImport = (() => {
     el.style.pointerEvents  = 'none';
   }
 
-  // User dismisses a candidate — not treated as recurring
+  // User marks a candidate as not recurring — dims it with a label
   function rejectReview(i) {
-    document.getElementById(`review-${i}`).style.display = 'none';
+    const el = document.getElementById(`review-${i}`);
+    el.style.opacity       = '0.4';
+    el.style.pointerEvents = 'none';
+    el.querySelector('.review-item-name').insertAdjacentHTML(
+      'afterend',
+      '<div style="font-size:11px;color:#ef4444;margin-top:2px;"><i class="fa-solid fa-xmark"></i> Geen vaste last</div>'
+    );
   }
 
   // Confirm import: write all new transactions to the database
