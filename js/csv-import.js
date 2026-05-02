@@ -340,12 +340,18 @@ const CSVImport = (() => {
         }
       }
 
+      // Match label by IBAN or search term
+      const label  = Labels.findMatch(row.counterparty, row.description);
+      const labelId = label?.id || null;
+      // Label category takes lower priority than post category
+      if (!catId && label?.category_id) catId = label.category_id;
+
       DB.run(
         `INSERT OR IGNORE INTO transactions
-           (sequence_nr, date, description, counterparty, amount, type, category_id, post_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (sequence_nr, date, description, counterparty, amount, type, category_id, post_id, label_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [row.sequenceNr || null, row.date, row.description, row.counterparty,
-         row.amount, row.type, catId, postId]
+         row.amount, row.type, catId, postId, labelId]
       );
       imported++;
     }

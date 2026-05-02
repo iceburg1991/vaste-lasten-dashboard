@@ -185,3 +185,27 @@ td{padding:11px 16px;vertical-align:middle}
   border-bottom-color:#1f2937;
 }
 .tooltip-container.open .tooltip-bubble { display:block; }
+
+/* ---- Labels ---- */
+.label-pill {
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:500;
+  background:#eff6ff;
+  color:#2563eb;
+  border:1px solid #bfdbfe;
+}
+.label-edit-btn {
+  background:none;
+  border:none;
+  cursor:pointer;
+  color:#d1d5db;
+  font-size:11px;
+  padding:0 4px;
+  vertical-align:middle;
+  transition:color .15s;
+}
+.label-edit-btn:hover { color:#2563eb; }

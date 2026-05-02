@@ -31,6 +31,15 @@ const DB = (() => {
       FOREIGN KEY(category_id) REFERENCES categories(id)
     );
 
+    CREATE TABLE IF NOT EXISTS labels (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT NOT NULL,
+      iban        TEXT,
+      search_term TEXT,
+      category_id INTEGER,
+      FOREIGN KEY(category_id) REFERENCES categories(id)
+    );
+
     CREATE TABLE IF NOT EXISTS transactions (
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
       sequence_nr  TEXT UNIQUE,
@@ -41,8 +50,10 @@ const DB = (() => {
       type         TEXT NOT NULL,
       category_id  INTEGER,
       post_id      INTEGER,
+      label_id     INTEGER,
       FOREIGN KEY(category_id) REFERENCES categories(id),
-      FOREIGN KEY(post_id)     REFERENCES recurring_posts(id)
+      FOREIGN KEY(post_id)     REFERENCES recurring_posts(id),
+      FOREIGN KEY(label_id)    REFERENCES labels(id)
     );
   `;
 
@@ -184,6 +195,7 @@ const DB = (() => {
     Posts.render();
     Transactions.populateMonthSelector();
     Transactions.render();
+    Labels.render();
     Settings.render();
   }
 

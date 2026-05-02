@@ -111,6 +111,9 @@
       <button class="tab-btn" data-tab="transactions" onclick="UI.switchTab('transactions')">
         <i class="fa-solid fa-receipt"></i> Transacties
       </button>
+      <button class="tab-btn" data-tab="labels" onclick="UI.switchTab('labels')">
+        <i class="fa-solid fa-tags"></i> Labels
+      </button>
       <button class="tab-btn" data-tab="settings" onclick="UI.switchTab('settings')">
         <i class="fa-solid fa-gear"></i> Instellingen
       </button>
@@ -209,6 +212,30 @@
             </tr>
           </thead>
           <tbody id="trans-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ---- TAB: LABELS ---- -->
+    <div id="tab-labels" class="tab-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="section-title" style="margin:0">Labels beheren</div>
+        <button class="btn btn-primary" onclick="Labels.openModal()">
+          <i class="fa-solid fa-plus"></i> Label toevoegen
+        </button>
+      </div>
+      <div class="alert alert-info">
+        <i class="fa-solid fa-circle-info"></i>
+        Labels vervangen de ruwe omschrijving in de transactietabel. Ze worden automatisch gekoppeld op basis van IBAN of zoekterm.
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Label</th><th>IBAN</th><th>Zoekterm</th><th>Categorie</th><th>Gebruik</th><th>Acties</th>
+            </tr>
+          </thead>
+          <tbody id="labels-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -337,6 +364,34 @@
   </div>
 </div>
 
+<!-- Label modal -->
+<div class="modal-overlay" id="modal-label">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-title" id="modal-label-title">Label toevoegen</div>
+    <input type="hidden" id="label-id" />
+    <div class="form-group">
+      <label class="form-label">Labelnaam</label>
+      <input type="text" id="label-name" class="form-input" placeholder="bijv. Ziggo, Albert Heijn, Gemeente Utrecht" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">IBAN tegenrekening (prioriteit)</label>
+      <input type="text" id="label-iban" class="form-input" placeholder="bijv. NL91ABNA0417164300" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Zoekterm in omschrijving (fallback)</label>
+      <input type="text" id="label-searchterm" class="form-input" placeholder="bijv. ZIGGO of ALBERT HEIJN" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categorie (optioneel)</label>
+      <select id="label-cat" class="form-select"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="UI.closeModal('modal-label')">Annuleren</button>
+      <button class="btn btn-primary" onclick="Labels.save()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
 <!-- KPI detail modal -->
 <div class="modal-overlay" id="modal-detail">
   <div class="modal" style="max-width:700px;">
@@ -444,6 +499,7 @@
 <script src="js/dashboard.js"></script>
 <script src="js/posts.js"></script>
 <script src="js/transactions.js"></script>
+<script src="js/labels.js"></script>
 <script src="js/settings.js"></script>
 
 <!-- Initialise app -->

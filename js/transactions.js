@@ -21,9 +21,10 @@ const Transactions = (() => {
     if (!ym || ym === 'Geen data') return;
 
     const rows = DB.query(`
-      SELECT t.*, c.name AS cat_name
+      SELECT t.*, c.name AS cat_name, l.name AS label_name
       FROM   transactions t
       LEFT   JOIN categories c ON c.id = t.category_id
+      LEFT   JOIN labels     l ON l.id = t.label_id
       WHERE  t.date LIKE ?
       ORDER  BY t.date DESC
     `, [`${ym}%`]);
@@ -54,10 +55,25 @@ const Transactions = (() => {
              </button>`
           : '';
 
+      // Show label if available, fall back to raw description
+      const displayName = r.label_name
+        ? `<span class="label-pill">${r.label_name}</span>`
+        : r.description.substring(0, 50);
+
       return `
         <tr>
           <td>${r.date}</td>
-          <td>${r.description.substring(0, 50)}</td>
+          <td>
+            ${displayName}
+            <button class="label-edit-btn" title="Label bewerken"
+              onclick="Labels.openModal(${r.label_id || 'null'}, {
+                name: '${(r.label_name || r.description.substring(0,40)).replace(/'/g, "\'")}',
+                iban: '${(r.counterparty || '').replace(/'/g, "\'")}',
+                search_term: '${r.description.substring(0,20).replace(/'/g, "\'")}'
+              })">
+              <i class="fa-solid fa-tag"></i>
+            </button>
+          </td>
           <td class="text-muted small">${r.counterparty || '—'}</td>
           <td class="${r.type === 'credit' ? 'amount-credit' : 'amount-debit'}">
             €${r.amount.toFixed(2)}
