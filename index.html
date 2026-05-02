@@ -44,6 +44,14 @@
       Inzicht in je maandelijkse kosten, genormaliseerd vanuit je Rabobank afschriften.
     </p>
 
+    <!-- Shown only when user previously connected Google Drive -->
+    <div id="reconnect-section" style="display:none; margin-bottom:16px;">
+      <button class="landing-btn" style="border-color:#93c5fd;background:#eff6ff;" onclick="UI.connectGoogleDrive()">
+        <span class="btn-title"><i class="fa-solid fa-rotate-right"></i> Herverbinden met Google Drive</span>
+        <span class="btn-desc">Je gebruikte Google Drive de vorige keer — klik hier om je database te laden</span>
+      </button>
+    </div>
+
     <div class="landing-options">
       <button class="landing-btn" onclick="UI.connectGoogleDrive()">
         <span class="btn-title"><i class="fa-solid fa-cloud"></i> Verbinden met Google Drive</span>
@@ -351,8 +359,10 @@
   (async () => {
     await DB.init();
     UI.initModalBackdrops();
-    // Attempt silent reconnect to Google Drive if the user chose it in a previous session
-    GoogleDrive.tryAutoReconnect();
+    // Show reconnect button if the user previously used Google Drive
+    if (GoogleDrive.wasConnected()) {
+      document.getElementById('reconnect-section').style.display = 'block';
+    }
   })();
 </script>
 

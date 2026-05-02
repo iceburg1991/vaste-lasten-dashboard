@@ -16,29 +16,25 @@ const GoogleDrive = (() => {
   let fileId      = null;
 
   // Initiate Google OAuth login
-  // silent=true tries to get a token without showing a popup (used on auto-reconnect)
-  function connect(silent = false) {
-    // Remember that the user prefers Google Drive
+  // Connect to Google Drive via OAuth popup
+  function connect() {
+    // Remember that the user prefers Google Drive across sessions
     localStorage.setItem('vl_storage', 'google-drive');
 
-    const script    = document.createElement('script');
-    script.src      = 'https://accounts.google.com/gsi/client';
-    script.onload   = () => _requestToken(silent);
-    script.onerror  = () => {
-      if (!silent) UI.toast('Google Sign-In kon niet geladen worden. Controleer je internetverbinding.');
-    };
+    const script   = document.createElement('script');
+    script.src     = 'https://accounts.google.com/gsi/client';
+    script.onload  = _requestToken;
+    script.onerror = () => UI.toast('Google Sign-In kon niet geladen worden. Controleer je internetverbinding.');
     document.head.appendChild(script);
   }
 
-  function _requestToken(silent = false) {
+  function _requestToken() {
     const client = google.accounts.oauth2.initTokenClient({
       client_id: CONFIG.GOOGLE_CLIENT_ID,
       scope:     CONFIG.GOOGLE_DRIVE_SCOPE,
-      prompt:    silent ? 'none' : '',
       callback:  async response => {
         if (response.error) {
-          if (!silent) UI.toast('Google Drive verbinding mislukt: ' + response.error);
-          // Silent reconnect failed — show landing screen so user can manually connect
+          UI.toast('Google Drive verbinding mislukt: ' + response.error);
           return;
         }
         accessToken = response.access_token;
@@ -49,11 +45,9 @@ const GoogleDrive = (() => {
     client.requestAccessToken();
   }
 
-  // Try to silently reconnect on page load if user previously chose Google Drive
-  function tryAutoReconnect() {
-    if (localStorage.getItem('vl_storage') === 'google-drive') {
-      connect(true);
-    }
+  // Returns true if the user previously chose Google Drive (used to show reconnect button)
+  function wasConnected() {
+    return localStorage.getItem('vl_storage') === 'google-drive';
   }
 
   // Search Drive for existing DB file; download or create
@@ -122,5 +116,5 @@ const GoogleDrive = (() => {
     return accessToken !== null;
   }
 
-  return { connect, upload, isConnected, tryAutoReconnect };
+  return { connect, upload, isConnected, wasConnected };
 })();
