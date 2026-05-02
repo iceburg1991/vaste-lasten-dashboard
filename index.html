@@ -968,8 +968,7 @@ const CSV = (() => {
   async function onFileSelected(e) {
     const file = e.target.files[0];
     if (!file) return;
-    const text = await file.text();
-    parsedRows = parseRabobankCSV(text);
+    parsedRows = await parseRabobankCSV(file);
 
     // Filter duplicaten
     const existing = DB.query('SELECT datum, omschrijving, bedrag FROM transacties');
@@ -992,30 +991,74 @@ const CSV = (() => {
     document.getElementById('btn-import-confirm').disabled = false;
   }
 
-  function parseRabobankCSV(text) {
-    const lines = text.trim().split('\n');
+  // Rabobank CSV kolomindeling (26 kolommen):
+  // 0  IBAN/BBAN         - eigen rekening
+  // 1  Munt
+  // 2  BIC
+  // 3  Volgnr
+  // 4  Datum             ← gebruiken
+  // 5  Rentedatum
+  // 6  Bedrag            ← gebruiken (negatief = debit, komma als decimaal)
+  // 7  Saldo na trn
+  // 8  Tegenrekening     ← gebruiken
+  // 9  Naam tegenpartij  ← gebruiken als fallback omschrijving
+  // 10 Naam uiteindelijke partij
+  // 11 Naam initiërende partij
+  // 12 BIC tegenpartij
+  // 13 Code
+  // 14 Batch ID
+  // 15 Transactiereferentie
+  // 16 Machtigingskenmerk
+  // 17 Incassant ID
+  // 18 Betalingskenmerk
+  // 19 Omschrijving-1    ← gebruiken
+  // 20 Omschrijving-2    ← gebruiken
+  // 21 Omschrijving-3    ← gebruiken
+  // 22..25 overig
+  async function parseRabobankCSV(fileOrText) {
+    let text;
+    if (typeof fileOrText === 'string') {
+      text = fileOrText;
+    } else {
+      // Lees als ISO-8859-1 (Rabobank encoding)
+      const buffer = await fileOrText.arrayBuffer();
+      text = new TextDecoder('iso-8859-1').decode(buffer);
+    }
+
+    const lines = text.trim().split(/\r?\n/);
     const rows = [];
-    // Sla header over
+
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i]);
-      if (cols.length < 12) continue;
-      const bedragStr = cols[11]?.replace(',', '.').replace('"', '') || '0';
-      const type = cols[10]?.trim() === 'C' ? 'credit' : 'debit';
-      const omschrijving = [cols[13], cols[14], cols[15]].filter(Boolean).join(' ').trim()
-        || cols[9]?.trim() || 'Onbekend';
+      if (cols.length < 7) continue;
+
+      // Bedrag: vervang komma door punt, verwijder + prefix
+      const bedragStr = cols[6]?.replace(',', '.').replace('+', '').trim() || '0';
+      const bedragVal = parseFloat(bedragStr);
+      if (isNaN(bedragVal) || bedragVal === 0) continue;
+
+      const type = bedragVal < 0 ? 'debit' : 'credit';
+
+      // Omschrijving: combineer omschrijving velden, val terug op naam tegenpartij
+      const omschrijving = [cols[19], cols[20], cols[21]]
+        .map(s => s?.trim()).filter(Boolean).join(' ').trim()
+        || cols[9]?.trim()
+        || 'Onbekend';
+
       rows.push({
-        datum: cols[4]?.trim().replace(/"/g, '') || '',
-        omschrijving: omschrijving.replace(/"/g, '').substring(0, 200),
-        tegenrekening: cols[8]?.trim().replace(/"/g, '') || '',
-        bedrag: Math.abs(parseFloat(bedragStr) || 0),
+        datum: cols[4]?.trim() || '',
+        omschrijving: omschrijving.substring(0, 200),
+        tegenrekening: cols[8]?.trim() || '',
+        naam_tegenpartij: cols[9]?.trim() || '',
+        bedrag: Math.abs(bedragVal),
         type,
       });
     }
-    return rows.filter(r => r.datum && r.bedrag > 0);
+    return rows.filter(r => r.datum);
   }
 
   function parseCSVLine(line) {
-    // Rabobank CSV is komma-gescheiden, met quotes rond velden
+    // Rabobank CSV: komma-gescheiden, velden tussen dubbele quotes
     const result = [];
     let current = '';
     let inQuotes = false;
