@@ -36,6 +36,7 @@ const DB = (() => {
       name        TEXT NOT NULL,
       iban        TEXT,
       search_term TEXT,
+      amount      REAL,
       category_id INTEGER,
       FOREIGN KEY(category_id) REFERENCES categories(id)
     );
@@ -59,13 +60,23 @@ const DB = (() => {
 
   // Run migrations to update older databases with new columns/tables
   function _migrate() {
-    // Migration 1: add label_id column to transactions if missing
-    const stmt = db.prepare("PRAGMA table_info(transactions)");
-    const cols = [];
-    while (stmt.step()) cols.push(stmt.getAsObject().name);
-    stmt.free();
-    if (!cols.includes('label_id')) {
+    // Helper: get column names for a table
+    const getColumns = (table) => {
+      const s = db.prepare(`PRAGMA table_info(${table})`);
+      const cols = [];
+      while (s.step()) cols.push(s.getAsObject().name);
+      s.free();
+      return cols;
+    };
+
+    // Migration 1: add label_id to transactions
+    if (!getColumns('transactions').includes('label_id')) {
       db.run('ALTER TABLE transactions ADD COLUMN label_id INTEGER REFERENCES labels(id)');
+    }
+
+    // Migration 2: add amount to labels
+    if (!getColumns('labels').includes('amount')) {
+      db.run('ALTER TABLE labels ADD COLUMN amount REAL');
     }
   }
 
