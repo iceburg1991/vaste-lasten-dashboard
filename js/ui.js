@@ -91,5 +91,6 @@ const UI = (() => {
     toast,
     connectGoogleDrive,
     initModalBackdrops,
+    updateDriveStatus,
   };
 })();
