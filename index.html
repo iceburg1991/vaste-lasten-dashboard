@@ -351,6 +351,8 @@
   (async () => {
     await DB.init();
     UI.initModalBackdrops();
+    // Attempt silent reconnect to Google Drive if the user chose it in a previous session
+    GoogleDrive.tryAutoReconnect();
   })();
 </script>
 
