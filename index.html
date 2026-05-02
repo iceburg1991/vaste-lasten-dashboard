@@ -754,6 +754,7 @@ const DB = (() => {
     );
     CREATE TABLE IF NOT EXISTS transacties (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      volgnr TEXT UNIQUE,
       datum TEXT NOT NULL,
       omschrijving TEXT,
       tegenrekening TEXT,
@@ -970,10 +971,19 @@ const CSV = (() => {
     if (!file) return;
     parsedRows = await parseRabobankCSV(file);
 
-    // Filter duplicaten
-    const existing = DB.query('SELECT datum, omschrijving, bedrag FROM transacties');
-    const existingKeys = new Set(existing.map(r => `${r.datum}|${r.omschrijving}|${r.bedrag}`));
-    const newRows = parsedRows.filter(r => !existingKeys.has(`${r.datum}|${r.omschrijving}|${r.bedrag}`));
+    // Filter duplicaten op basis van Volgnr (uniek per Rabobank transactie)
+    // Fallback op datum+omschrijving+bedrag voor rijen zonder volgnr
+    const existingVolgnrs = new Set(
+      DB.query('SELECT volgnr FROM transacties WHERE volgnr IS NOT NULL').map(r => r.volgnr)
+    );
+    const existingFallbackKeys = new Set(
+      DB.query('SELECT datum, omschrijving, bedrag FROM transacties WHERE volgnr IS NULL')
+        .map(r => `${r.datum}|${r.omschrijving}|${r.bedrag}`)
+    );
+    const newRows = parsedRows.filter(r => {
+      if (r.volgnr) return !existingVolgnrs.has(r.volgnr);
+      return !existingFallbackKeys.has(`${r.datum}|${r.omschrijving}|${r.bedrag}`);
+    });
 
     document.getElementById('import-preview-text').textContent =
       `${newRows.length} nieuwe transacties gevonden (${parsedRows.length - newRows.length} duplicaten overgeslagen)`;
@@ -1046,6 +1056,7 @@ const CSV = (() => {
         || 'Onbekend';
 
       rows.push({
+        volgnr: cols[3]?.trim() || null,
         datum: cols[4]?.trim() || '',
         omschrijving: omschrijving.substring(0, 200),
         tegenrekening: cols[8]?.trim() || '',
@@ -1166,8 +1177,8 @@ const CSV = (() => {
         if (ibanMatch || termMatch) { postId = post.id; catId = post.categorie_id; break; }
       }
       DB.run(
-        'INSERT INTO transacties (datum, omschrijving, tegenrekening, bedrag, type, categorie_id, post_id) VALUES (?,?,?,?,?,?,?)',
-        [row.datum, row.omschrijving, row.tegenrekening, row.bedrag, row.type, catId, postId]
+        'INSERT OR IGNORE INTO transacties (volgnr, datum, omschrijving, tegenrekening, bedrag, type, categorie_id, post_id) VALUES (?,?,?,?,?,?,?,?)',
+        [row.volgnr || null, row.datum, row.omschrijving, row.tegenrekening, row.bedrag, row.type, catId, postId]
       );
       imported++;
     }
