@@ -108,8 +108,9 @@ const Dashboard = (() => {
       <div class="kpi-card kpi-${k.accent}">
         <div class="kpi-card-header">
           <div class="kpi-icon"><i class="${k.icon}"></i></div>
-          <div class="kpi-tooltip-wrap">
-            <i class="fa-solid fa-circle-info kpi-info-icon" title="${k.tooltip}"></i>
+          <div class="tooltip-container" onclick="this.classList.toggle('open')" onblur="this.classList.remove('open')" tabindex="0">
+            <i class="fa-solid fa-circle-info kpi-info-icon"></i>
+            <div class="tooltip-bubble">${k.tooltip}</div>
           </div>
         </div>
         <div class="kpi-label">${k.label}</div>

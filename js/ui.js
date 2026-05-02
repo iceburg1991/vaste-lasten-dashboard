@@ -66,6 +66,13 @@ const UI = (() => {
         if (e.target === overlay) overlay.classList.remove('open');
       });
     });
+    // Close any open tooltips when clicking outside
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.tooltip-container')) {
+        document.querySelectorAll('.tooltip-container.open')
+          .forEach(el => el.classList.remove('open'));
+      }
+    });
   }
 
   return {
