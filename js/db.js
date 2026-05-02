@@ -131,12 +131,17 @@ const DB = (() => {
     URL.revokeObjectURL(url);
   }
 
-  // Save: try Google Drive first, fall back to local download
-  async function save() {
+  // Save to Google Drive if connected, otherwise show a toast reminder.
+  // silent=true suppresses the local download fallback (used for auto-saves after mutations)
+  async function save(silent = false) {
     const saved = await GoogleDrive.upload();
     if (!saved) {
-      downloadSqlite();
-      UI.toast('Lokaal opgeslagen — bewaar het bestand in Google Drive als backup.');
+      if (!silent) {
+        downloadSqlite();
+        UI.toast('Lokaal opgeslagen — bewaar het bestand in Google Drive als backup.');
+      } else {
+        UI.toast('Niet verbonden met Google Drive — klik Opslaan om data te bewaren.');
+      }
     } else {
       UI.toast('Opgeslagen in Google Drive.');
     }

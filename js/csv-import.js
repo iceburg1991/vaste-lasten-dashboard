@@ -357,6 +357,9 @@ const CSVImport = (() => {
     Transactions.populateMonthSelector();
     Transactions.render();
     UI.toast(`${imported} transacties geïmporteerd.`);
+
+    // Auto-save to Google Drive (or prompt local download if not connected)
+    DB.save(true);
   }
 
   return { openModal, onFileChanged, confirmImport, acceptReview, rejectReview };

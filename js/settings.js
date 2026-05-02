@@ -31,6 +31,7 @@ const Settings = (() => {
     DB.run('INSERT OR IGNORE INTO categories (name) VALUES (?)', [name]);
     UI.closeModal('modal-cat');
     render();
+    DB.save(true);
   }
 
   function deleteCategory(id, name) {
@@ -38,6 +39,7 @@ const Settings = (() => {
       DB.run('UPDATE recurring_posts SET category_id = NULL WHERE category_id = ?', [id]);
       DB.run('DELETE FROM categories WHERE id = ?', [id]);
       render();
+      DB.save(true);
     }
   }
 

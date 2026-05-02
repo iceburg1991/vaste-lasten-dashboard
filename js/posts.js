@@ -108,6 +108,7 @@ const Posts = (() => {
     UI.closeModal('modal-post');
     render();
     Dashboard.render();
+    DB.save(true);
   }
 
   function deletePost(id) {
@@ -115,6 +116,7 @@ const Posts = (() => {
       DB.run('DELETE FROM recurring_posts WHERE id = ?', [id]);
       render();
       Dashboard.render();
+      DB.save(true);
     }
   }
 
