@@ -57,6 +57,18 @@ const DB = (() => {
     );
   `;
 
+  // Run migrations to update older databases with new columns/tables
+  function _migrate() {
+    // Migration 1: add label_id column to transactions if missing
+    const stmt = db.prepare("PRAGMA table_info(transactions)");
+    const cols = [];
+    while (stmt.step()) cols.push(stmt.getAsObject().name);
+    stmt.free();
+    if (!cols.includes('label_id')) {
+      db.run('ALTER TABLE transactions ADD COLUMN label_id INTEGER REFERENCES labels(id)');
+    }
+  }
+
   // Load sql.js WASM — must be called once before anything else
   async function init() {
     SQL = await initSqlJs({
@@ -68,6 +80,7 @@ const DB = (() => {
   function createNew() {
     db = new SQL.Database();
     db.run(SCHEMA);
+    _migrate();
     CONFIG.DEFAULT_CATEGORIES.forEach(name => {
       db.run('INSERT OR IGNORE INTO categories (name) VALUES (?)', [name]);
     });
@@ -87,7 +100,8 @@ const DB = (() => {
     reader.onload = e => {
       const arr = new Uint8Array(e.target.result);
       db = new SQL.Database(arr);
-      db.run(SCHEMA); // Ensure new columns exist when loading older databases
+      db.run(SCHEMA);
+      _migrate();
       _showApp();
     };
     reader.readAsArrayBuffer(file);
@@ -98,6 +112,7 @@ const DB = (() => {
     const arr = new Uint8Array(buffer);
     db = new SQL.Database(arr);
     db.run(SCHEMA);
+    _migrate();
     _showApp();
   }
 
