@@ -43,19 +43,17 @@ const Transactions = (() => {
         ? `<span class="label-pill">${r.label_name}</span>`
         : r.description.substring(0, 50);
 
-      // Pin/unpin button for debit transactions
-      const pinBtn = r.type === 'debit'
-        ? r.post_id
-          ? `<button class="btn btn-sm btn-danger" title="Koppeling vaste last verwijderen"
-               onclick="Transactions.unlink(${r.id})">
-               <i class="fa-solid fa-link-slash"></i>
-             </button>`
-          : `<button class="btn btn-sm" title="Markeren als vaste last"
-               onclick="Transactions.openLinkModal(${r.id}, ${r.amount}, '${(r.counterparty||'')}')"
-               data-desc="${r.description.replace(/"/g, '&quot;').substring(0,60)}">
-               <i class="fa-solid fa-thumbtack"></i>
-             </button>`
-        : '';
+      // Pin/unpin button for all transactions
+      const pinBtn = r.post_id
+        ? `<button class="btn btn-sm btn-danger" title="Koppeling vaste last verwijderen"
+             onclick="Transactions.unlink(${r.id})">
+             <i class="fa-solid fa-link-slash"></i>
+           </button>`
+        : `<button class="btn btn-sm" title="Markeren als vaste last"
+             onclick="Transactions.openLinkModal(${r.id}, ${r.amount}, '${(r.counterparty||'')}')"
+             data-desc="${r.description.replace(/"/g, '&quot;').substring(0,60)}">
+             <i class="fa-solid fa-thumbtack"></i>
+           </button>`;
 
       return `
         <tr>
