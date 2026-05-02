@@ -35,50 +35,71 @@ const CSVImport = (() => {
   function openModal() {
     parsedRows  = [];
     reviewItems = [];
-    document.getElementById('csv-file-input').value      = '';
-    document.getElementById('import-preview').style.display      = 'none';
-    document.getElementById('review-section').style.display      = 'none';
-    document.getElementById('btn-import-confirm').disabled       = true;
-    document.getElementById('csv-file-input').onchange           = _onFileSelected;
+    // Reset input so the same file can be selected again
+    document.getElementById('csv-file-input').value               = '';
+    document.getElementById('import-preview').style.display       = 'none';
+    document.getElementById('review-section').style.display       = 'none';
+    document.getElementById('btn-import-confirm').disabled        = true;
     UI.openModal('modal-import');
   }
 
   // Called when user picks a CSV file
-  async function _onFileSelected(e) {
+  // Called when user picks a CSV file
+  async function onFileChanged(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    parsedRows = await _parseRabobankCSV(file);
-
-    // Deduplicate against existing transactions using sequence number
-    const existingSeqNrs = new Set(
-      DB.query('SELECT sequence_nr FROM transactions WHERE sequence_nr IS NOT NULL')
-        .map(r => r.sequence_nr)
-    );
-    const existingFallbackKeys = new Set(
-      DB.query('SELECT date, description, amount FROM transactions WHERE sequence_nr IS NULL')
-        .map(r => `${r.date}|${r.description}|${r.amount}`)
-    );
-
-    const newRows = parsedRows.filter(r => {
-      if (r.sequenceNr) return !existingSeqNrs.has(r.sequenceNr);
-      return !existingFallbackKeys.has(`${r.date}|${r.description}|${r.amount}`);
-    });
-
-    document.getElementById('import-preview-text').textContent =
-      `${newRows.length} new transactions found (${parsedRows.length - newRows.length} duplicates skipped)`;
+    // Show loading state
+    document.getElementById('import-preview-text').textContent = 'Reading file...';
     document.getElementById('import-preview').style.display = 'block';
-    parsedRows = newRows;
 
-    // Auto-detect recurring transactions and show review for uncertain ones
-    reviewItems = _detectRecurring(newRows);
-    if (reviewItems.length > 0) {
-      _renderReview(reviewItems);
-      document.getElementById('review-section').style.display = 'block';
-      document.getElementById('review-count').textContent     = reviewItems.length;
+    try {
+      const allRows = await _parseRabobankCSV(file);
+      console.log('[CSV] Parsed rows:', allRows.length);
+
+      if (allRows.length === 0) {
+        document.getElementById('import-preview-text').textContent =
+          'No transactions found. Make sure you selected a Rabobank CSV file.';
+        return;
+      }
+
+      // Deduplicate against existing transactions using sequence number
+      const existingSeqNrs = new Set(
+        DB.query('SELECT sequence_nr FROM transactions WHERE sequence_nr IS NOT NULL')
+          .map(r => r.sequence_nr)
+      );
+      const existingFallbackKeys = new Set(
+        DB.query('SELECT date, description, amount FROM transactions WHERE sequence_nr IS NULL')
+          .map(r => `${r.date}|${r.description}|${r.amount}`)
+      );
+
+      const newRows = allRows.filter(r => {
+        if (r.sequenceNr) return !existingSeqNrs.has(r.sequenceNr);
+        return !existingFallbackKeys.has(`${r.date}|${r.description}|${r.amount}`);
+      });
+
+      console.log('[CSV] New rows after dedup:', newRows.length);
+
+      document.getElementById('import-preview-text').textContent =
+        `${newRows.length} new transactions found (${allRows.length - newRows.length} duplicates skipped)`;
+
+      parsedRows = newRows;
+
+      // Auto-detect recurring transactions and show review for uncertain ones
+      reviewItems = _detectRecurring(newRows);
+      if (reviewItems.length > 0) {
+        _renderReview(reviewItems);
+        document.getElementById('review-section').style.display = 'block';
+        document.getElementById('review-count').textContent     = reviewItems.length;
+      }
+
+      document.getElementById('btn-import-confirm').disabled = newRows.length === 0;
+
+    } catch (err) {
+      console.error('[CSV] Parse error:', err);
+      document.getElementById('import-preview-text').textContent =
+        'Error reading file: ' + err.message;
     }
-
-    document.getElementById('btn-import-confirm').disabled = false;
   }
 
   // Parse a Rabobank CSV file (ISO-8859-1 encoded)
@@ -280,5 +301,5 @@ const CSVImport = (() => {
     UI.toast(`${imported} transactions imported.`);
   }
 
-  return { openModal, confirmImport, acceptReview, rejectReview };
+  return { openModal, onFileChanged, confirmImport, acceptReview, rejectReview };
 })();
