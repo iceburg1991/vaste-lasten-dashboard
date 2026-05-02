@@ -143,10 +143,27 @@ const DB = (() => {
   }
 
   // Wipe everything and start fresh
-  function reset() {
-    if (confirm('Alle data wissen? Dit kan niet ongedaan worden gemaakt.')) {
-      createNew();
+  async function reset() {
+    if (!confirm('Alle data wissen? Dit kan niet ongedaan worden gemaakt.')) return;
+
+    // Create a fresh empty database
+    db = new SQL.Database();
+    db.run(SCHEMA);
+    CONFIG.DEFAULT_CATEGORIES.forEach(name => {
+      db.run('INSERT OR IGNORE INTO categories (name) VALUES (?)', [name]);
+    });
+
+    // If connected to Google Drive, overwrite the file there too
+    const driveUploadOk = await GoogleDrive.upload();
+    if (driveUploadOk) {
+      UI.toast('Database gereset en opgeslagen in Google Drive.');
+    } else {
+      // Not connected to Drive — clear the preference so user starts clean
+      localStorage.removeItem('vl_storage');
+      UI.toast('Database gereset. Sla op om de lege database te bewaren.');
     }
+
+    _showApp();
   }
 
   function isReady() {
