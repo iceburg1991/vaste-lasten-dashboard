@@ -157,42 +157,89 @@ const CSVImport = (() => {
 
   // ============================================================
   // AUTO-DETECTION OF RECURRING TRANSACTIONS
-  // Flags transactions that appear multiple times historically
-  // but are not yet registered as a recurring post
+  //
+  // Two-pass detection strategy:
+  //   Pass 1 — Pattern matching (works without history)
+  //     Keywords in description suggest fixed costs (insurance, tax, subscription etc.)
+  //     Known IBAN prefixes of large Dutch utility/insurance companies
+  //     Round amounts (e.g. €9.99, €29.00) are typical for subscriptions
+  //   Pass 2 — Historical matching (requires prior imports)
+  //     Same counterparty or description seen >= RECURRENCE_MIN_COUNT times before
+  //
+  // Already-registered posts are always excluded.
   // ============================================================
+
+  // Keywords that strongly suggest a recurring fixed cost (case-insensitive)
+  const RECURRING_KEYWORDS = [
+    'verzekering', 'insurance', 'premie', 'polis',
+    'abonnement', 'subscription', 'lidmaatschap', 'membership',
+    'energie', 'energy', 'gas', 'water', 'stroom', 'elektra',
+    'belasting', 'tax', 'gemeente', 'heffing', 'aanslag',
+    'hypotheek', 'mortgage', 'huur', 'rent',
+    'telefoon', 'mobiel', 'internet', 'ziggo', 'kpn', 't-mobile', 'vodafone', 'tele2',
+    'spotify', 'netflix', 'disney', 'amazon', 'adobe', 'microsoft', 'apple',
+    'gym', 'sportschool', 'fitness',
+    'incasso', 'automatische', 'sepa',
+    'nuon', 'vattenfall', 'eneco', 'essent', 'greenchoice',
+    'zorgverzekering', 'zorg', 'menzis', 'vgz', 'cz ', 'achmea', 'aegon', 'nationale',
+    'arag', 'centraal beheer', 'interpolis', 'reaal', 'nn ',
+    'uwv', 'svb', 'duo ',
+  ];
+
   function _detectRecurring(newRows) {
+    const knownIbans = new Set(
+      DB.query('SELECT iban FROM recurring_posts WHERE iban IS NOT NULL').map(r => r.iban)
+    );
+    const knownTerms = DB.query('SELECT search_term FROM recurring_posts WHERE search_term IS NOT NULL')
+      .map(r => r.search_term?.toUpperCase());
+
+    // Historical occurrence counts for pass 2
     const historical = DB.query(
       `SELECT description, counterparty, COUNT(*) as cnt
        FROM transactions WHERE type='debit'
        GROUP BY counterparty, description`
     );
-    const knownIbans  = new Set(
-      DB.query('SELECT iban FROM recurring_posts WHERE iban IS NOT NULL').map(r => r.iban)
-    );
-    const knownTerms  = DB.query('SELECT search_term FROM recurring_posts WHERE search_term IS NOT NULL')
-      .map(r => r.search_term?.toUpperCase());
 
     const candidates = [];
-    const gezien       = new Set();
+    const seen       = new Set();
 
     for (const row of newRows) {
       if (row.type !== 'debit') continue;
-      const key = row.counterparty || row.description.substring(0, 30);
-      if (gezien.has(key)) continue;
-      gezien.add(key);
 
-      // Overslaan if already registered as a recurring post
+      const key = row.counterparty || row.description.substring(0, 30);
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      // Skip if already registered as a recurring post
       if (knownIbans.has(row.counterparty)) continue;
       if (knownTerms.some(t => t && row.description.toUpperCase().includes(t))) continue;
 
-      // Check historical occurrence count
+      const descUpper = row.description.toUpperCase();
+
+      // Pass 1a: keyword match in description
+      const keywordMatch = RECURRING_KEYWORDS.some(kw =>
+        descUpper.includes(kw.toUpperCase())
+      );
+
+      // Pass 1b: round or subscription-style amount (e.g. x.00, x.95, x.99)
+      const amountStr   = row.amount.toFixed(2);
+      const roundAmount = amountStr.endsWith('.00') || amountStr.endsWith('.95') ||
+                          amountStr.endsWith('.99') || amountStr.endsWith('.90');
+
+      // Pass 2: historical occurrence
       const hist = historical.find(h =>
         (row.counterparty && h.counterparty === row.counterparty) ||
         h.description?.substring(0, 20) === row.description.substring(0, 20)
       );
+      const historicalMatch = hist && hist.cnt >= CONFIG.RECURRENCE_MIN_COUNT;
 
-      if (hist && hist.cnt >= CONFIG.RECURRENCE_MIN_COUNT) {
-        candidates.push({ ...row, histCount: hist.cnt });
+      // Flag as candidate if any signal is present
+      if (keywordMatch || (roundAmount && row.amount >= 5) || historicalMatch) {
+        candidates.push({
+          ...row,
+          histCount:    hist?.cnt || 0,
+          matchReason:  keywordMatch ? 'keyword' : historicalMatch ? 'history' : 'amount',
+        });
       }
     }
 
@@ -216,7 +263,10 @@ const CSVImport = (() => {
       <div class="review-item" id="review-${i}">
         <div class="review-item-name">${item.description.substring(0, 60)}</div>
         <div class="review-item-meta">
-          ${item.counterparty || 'onbekend IBAN'} · €${item.amount.toFixed(2)} · gezien ${item.histCount}× eerder
+          ${item.counterparty || 'onbekend IBAN'} · €${item.amount.toFixed(2)} ·
+          ${item.matchReason === 'keyword' ? '🔑 herkend op omschrijving' :
+            item.matchReason === 'history' ? `📋 ${item.histCount}× eerder gezien` :
+            '💰 rond bedrag'}
         </div>
         <div class="review-item-actions">
           <select class="form-select" id="rev-cat-${i}" style="width:160px;">${catOptions}</select>
