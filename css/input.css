@@ -171,6 +171,46 @@ td { padding: 11px 16px; vertical-align: middle; }
 .toast { background: #111827; color: #fff; font-size: 12px; padding: 10px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.2); opacity: 0; transform: translateY(8px); transition: all 0.2s; }
 .toast-visible { opacity: 1; transform: translateY(0); }
 
+
+/* ---- KPI card extras ---- */
+.kpi-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; }
+.kpi-icon  { font-size:18px; color:#e5e7eb; margin-bottom:12px; }
+.kpi-info-icon { color:#d1d5db; font-size:13px; cursor:help; transition:color .15s; }
+.kpi-info-icon:hover { color:#6b7280; }
+.kpi-tooltip-wrap { position:relative; }
+.kpi-detail-btn {
+  margin-top:10px; display:inline-flex; align-items:center; gap:5px;
+  font-size:11px; color:#2563eb; background:none; border:none;
+  cursor:pointer; padding:0; font-family:'Inter',sans-serif; opacity:.8;
+}
+.kpi-detail-btn:hover { opacity:1; text-decoration:underline; }
+
+/* ---- Clickable tooltip ---- */
+.tooltip-container { position:relative; display:inline-block; }
+.tooltip-bubble {
+  display:none; position:absolute; top:calc(100% + 8px); right:0;
+  width:240px; background:#1f2937; color:#f9fafb; font-size:12px;
+  line-height:1.5; padding:10px 12px; border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,.2); z-index:200; font-family:'Inter',sans-serif;
+}
+.tooltip-bubble::before {
+  content:''; position:absolute; bottom:100%; right:10px;
+  border:5px solid transparent; border-bottom-color:#1f2937;
+}
+.tooltip-container.open .tooltip-bubble { display:block; }
+
+/* ---- Labels ---- */
+.label-pill {
+  display:inline-flex; align-items:center; padding:2px 8px;
+  border-radius:20px; font-size:12px; font-weight:500;
+  background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;
+}
+.label-edit-btn {
+  background:none; border:none; cursor:pointer; color:#d1d5db;
+  font-size:11px; padding:0 4px; vertical-align:middle; transition:color .15s;
+}
+.label-edit-btn:hover { color:#2563eb; }
+
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .charts-grid { grid-template-columns: 1fr; }
