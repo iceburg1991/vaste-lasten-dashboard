@@ -78,6 +78,19 @@ const Normalisation = (() => {
     return `${year}-${String(month).padStart(2, '0')}`;
   }
 
+  // Total of internal transfers (category "Eigen rekening") for a given month
+  function internalTransfersForMonth(year, month) {
+    const monthStr = _monthStr(year, month);
+    const cat      = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
+    if (!cat) return 0;
+    const rows = DB.query(
+      `SELECT SUM(amount) AS total FROM transactions
+       WHERE type = 'debit' AND category_id = ? AND date LIKE ?`,
+      [cat.id, `${monthStr}%`]
+    );
+    return rows[0]?.total || 0;
+  }
+
   return {
     toMonthly,
     getPostsNormalised,
@@ -85,5 +98,6 @@ const Normalisation = (() => {
     actualSpendingForMonth,
     fixedCostsForMonth,
     postAmountForMonth,
+    internalTransfersForMonth,
   };
 })();
