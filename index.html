@@ -208,7 +208,7 @@
               <th>Bedrag</th>
               <th>Categorie</th>
               <th>Type</th>
-              <th></th>
+              <th>Acties</th>
             </tr>
           </thead>
           <tbody id="trans-tbody"></tbody>
@@ -388,6 +388,37 @@
     <div class="modal-actions">
       <button class="btn" onclick="UI.closeModal('modal-label')">Annuleren</button>
       <button class="btn btn-primary" onclick="Labels.save()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit transaction modal -->
+<div class="modal-overlay" id="modal-edit-transaction">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-title">Transactie bewerken</div>
+    <input type="hidden" id="edit-trans-id" />
+
+    <!-- Transaction summary -->
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:20px;">
+      <div style="font-weight:500;font-size:13px;" id="edit-trans-desc"></div>
+      <div style="display:flex;gap:12px;margin-top:4px;">
+        <span style="font-size:12px;color:#9ca3af;" id="edit-trans-date"></span>
+        <span style="font-size:12px;font-weight:500;" id="edit-trans-amount"></span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Categorie</label>
+      <select id="edit-trans-cat" class="form-select"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Label</label>
+      <select id="edit-trans-label" class="form-select"></select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="UI.closeModal('modal-edit-transaction')">Annuleren</button>
+      <button class="btn btn-primary" onclick="Transactions.saveEdit()">Opslaan</button>
     </div>
   </div>
 </div>
