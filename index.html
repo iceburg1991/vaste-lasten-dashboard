@@ -193,7 +193,7 @@
     <div id="tab-transactions" class="tab-content">
       <div class="month-selector">
         <span class="text-muted text-xs">Maand:</span>
-        <select id="trans-month-select" onchange="Transacties.render()"></select>
+        <select id="trans-month-select" onchange="Transactions.render()"></select>
       </div>
       <div class="table-wrap">
         <table>
@@ -221,7 +221,7 @@
           <tbody id="cats-tbody"></tbody>
         </table>
       </div>
-      <button class="btn btn-primary" onclick="Instellingen.openAddModal()">
+      <button class="btn btn-primary" onclick="Settings.openAddModal()">
         <i class="fa-solid fa-plus"></i> Categorie toevoegen
       </button>
 
@@ -331,7 +331,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="UI.closeModal('modal-cat')">Annuleren</button>
-      <button class="btn btn-primary" onclick="Instellingen.saveCategorie()">Add</button>
+      <button class="btn btn-primary" onclick="Settings.saveCategory()">Add</button>
     </div>
   </div>
 </div>
