@@ -360,9 +360,10 @@
   (async () => {
     await DB.init();
     UI.initModalBackdrops();
-    // Show reconnect button if the user previously used Google Drive
+    // Show reconnect button and attempt silent reconnect if user previously used Google Drive
     if (GoogleDrive.wasConnected()) {
       document.getElementById('reconnect-section').style.display = 'block';
+      GoogleDrive.preload(); // Try silent reconnect in background — hides button if successful
     }
   })();
 </script>

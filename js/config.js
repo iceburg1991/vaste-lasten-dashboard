@@ -21,7 +21,7 @@ const CONFIG = {
   DEFAULT_CATEGORIES: [
     'Uit eten & drinken',
     'Boodschappen',
-    'Hobby's en vrije tijd',
+    "Hobby's en vrije tijd",
     'Vakantie',
     'Cadeaus',
     'Openbaar vervoer',

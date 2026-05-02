@@ -15,11 +15,53 @@ const GoogleDrive = (() => {
   let accessToken = null;
   let fileId      = null;
 
+  // Capture at module init — avoids CONFIG timing issues in async callbacks
+  const CLIENT_ID   = '38413226701-opprq2rduaediv52s9or75ca0ukqvv84.apps.googleusercontent.com';
+  const SCOPE       = 'https://www.googleapis.com/auth/drive.file';
+  const DB_FILENAME = 'vaste-lasten.sqlite';
+
   // Initiate Google OAuth login
-  // Connect to Google Drive via OAuth popup
+  // Pre-load the Google Identity Services script in the background on page load.
+  // This way the OAuth popup appears faster when the user clicks reconnect.
+  function preload() {
+    if (!wasConnected()) return;
+    const script   = document.createElement('script');
+    script.src     = 'https://accounts.google.com/gsi/client';
+    script.async   = true;
+    script.defer   = true;
+    script.onload  = () => {
+      // Script is ready — attempt a silent token request (no popup)
+      // This works when the user has an active Google session in the browser
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope:     SCOPE,
+        prompt:    '',
+        callback:  async response => {
+          if (response.error || !response.access_token) return; // Silent failed, user must click reconnect
+          accessToken = response.access_token;
+          _updateStatus(true);
+          // Hide the reconnect button since we connected automatically
+          const el = document.getElementById('reconnect-section');
+          if (el) el.style.display = 'none';
+          await _findOrCreateFile();
+        },
+      });
+      // requestAccessToken with empty prompt — shows popup only if no active session
+      client.requestAccessToken({ prompt: '' });
+    };
+    document.head.appendChild(script);
+  }
+
+  // Connect to Google Drive via OAuth popup (called by user interaction)
   function connect() {
     // Remember that the user prefers Google Drive across sessions
     localStorage.setItem('vl_storage', 'google-drive');
+
+    // If GSI script already loaded by preload(), go straight to token request
+    if (typeof google !== 'undefined' && google.accounts) {
+      _requestToken();
+      return;
+    }
 
     const script   = document.createElement('script');
     script.src     = 'https://accounts.google.com/gsi/client';
@@ -30,8 +72,8 @@ const GoogleDrive = (() => {
 
   function _requestToken() {
     const client = google.accounts.oauth2.initTokenClient({
-      client_id: CONFIG.GOOGLE_CLIENT_ID,
-      scope:     CONFIG.GOOGLE_DRIVE_SCOPE,
+      client_id: CLIENT_ID,
+      scope:     SCOPE,
       callback:  async response => {
         if (response.error) {
           UI.toast('Google Drive verbinding mislukt: ' + response.error);
@@ -53,7 +95,7 @@ const GoogleDrive = (() => {
   // Search Drive for existing DB file; download or create
   async function _findOrCreateFile() {
     const res  = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${CONFIG.DB_FILENAME}'&spaces=drive&fields=files(id,name)`,
+      `https://www.googleapis.com/drive/v3/files?q=name='${DB_FILENAME}'&spaces=drive&fields=files(id,name)`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     const data = await res.json();
@@ -84,7 +126,7 @@ const GoogleDrive = (() => {
     if (!accessToken) return false;
 
     const data     = DB.exportRaw();
-    const metadata = { name: CONFIG.DB_FILENAME, mimeType: 'application/octet-stream' };
+    const metadata = { name: DB_FILENAME, mimeType: 'application/octet-stream' };
     const form     = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file',     new Blob([data],                     { type: 'application/octet-stream' }));
@@ -116,5 +158,5 @@ const GoogleDrive = (() => {
     return accessToken !== null;
   }
 
-  return { connect, upload, isConnected, wasConnected };
+  return { connect, preload, upload, isConnected, wasConnected };
 })();
