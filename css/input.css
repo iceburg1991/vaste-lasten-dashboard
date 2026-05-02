@@ -206,10 +206,23 @@ td { padding: 11px 16px; vertical-align: middle; }
   background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;
 }
 .label-edit-btn {
-  background:none; border:none; cursor:pointer; color:#d1d5db;
-  font-size:11px; padding:0 4px; vertical-align:middle; transition:color .15s;
+  background:none; border:none; cursor:pointer; color:#9ca3af;
+  font-size:12px; padding:2px 5px; vertical-align:middle; transition:color .15s;
+  border-radius:4px;
 }
-.label-edit-btn:hover { color:#2563eb; }
+.label-edit-btn:hover { color:#2563eb; background:#eff6ff; }
+
+
+/* ---- Transaction table column widths ---- */
+/* Columns: Datum | Omschrijving | Bedrag | Categorie | Type | Acties */
+#tab-transactions table { table-layout: fixed; width: 100%; }
+#tab-transactions td, #tab-transactions th { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#tab-transactions th:nth-child(1), #tab-transactions td:nth-child(1) { width: 95px; }
+#tab-transactions th:nth-child(2), #tab-transactions td:nth-child(2) { width: auto; }
+#tab-transactions th:nth-child(3), #tab-transactions td:nth-child(3) { width: 90px; }
+#tab-transactions th:nth-child(4), #tab-transactions td:nth-child(4) { width: 130px; }
+#tab-transactions th:nth-child(5), #tab-transactions td:nth-child(5) { width: 90px; }
+#tab-transactions th:nth-child(6), #tab-transactions td:nth-child(6) { width: 90px; }
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {

@@ -28,7 +28,7 @@ const Transactions = (() => {
 
     const tbody = document.getElementById('trans-tbody');
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Geen transacties</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Geen transacties</td></tr>';
       return;
     }
 
@@ -69,7 +69,6 @@ const Transactions = (() => {
               <i class="fa-solid fa-tag"></i>
             </button>
           </td>
-          <td class="text-muted small">${r.counterparty || '—'}</td>
           <td class="${r.type === 'credit' ? 'amount-credit' : 'amount-debit'}">
             €${r.amount.toFixed(2)}
           </td>
