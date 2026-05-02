@@ -31,6 +31,12 @@ const DB = (() => {
       FOREIGN KEY(category_id) REFERENCES categories(id)
     );
 
+    CREATE TABLE IF NOT EXISTS own_accounts (
+      id   INTEGER PRIMARY KEY AUTOINCREMENT,
+      iban TEXT NOT NULL UNIQUE,
+      name TEXT
+    );
+
     CREATE TABLE IF NOT EXISTS labels (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       name        TEXT NOT NULL,
@@ -72,6 +78,15 @@ const DB = (() => {
     // Migration 1: add label_id to transactions
     if (!getColumns('transactions').includes('label_id')) {
       db.run('ALTER TABLE transactions ADD COLUMN label_id INTEGER REFERENCES labels(id)');
+    }
+
+    // Migration 3: add own_accounts table if missing
+    try { db.run('SELECT 1 FROM own_accounts LIMIT 1'); } catch(e) {
+      db.run(`CREATE TABLE IF NOT EXISTS own_accounts (
+        id   INTEGER PRIMARY KEY AUTOINCREMENT,
+        iban TEXT NOT NULL UNIQUE,
+        name TEXT
+      )`);
     }
 
     // Migration 2: add amount to labels
@@ -223,6 +238,7 @@ const DB = (() => {
     Transactions.render();
     Labels.render();
     Settings.render();
+    Settings.renderOwnAccounts();
   }
 
   return {

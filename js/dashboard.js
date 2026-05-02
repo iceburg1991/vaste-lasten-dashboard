@@ -44,12 +44,13 @@ const Dashboard = (() => {
     const yoyMonth = month;
 
     const currentFixed    = Normalisation.fixedCostsForMonth(year, month);
-    const currentVariable = Normalisation.actualSpendingForMonth(year, month) - currentFixed;
+    const currentInternal = Normalisation.internalTransfersForMonth(year, month);
+    const currentVariable = Normalisation.actualSpendingForMonth(year, month) - currentFixed - currentInternal;
     const prevFixed       = Normalisation.fixedCostsForMonth(prevYear, prevMonth);
     const yoyFixed        = Normalisation.fixedCostsForMonth(yoyYear, yoyMonth);
     const normalised      = Normalisation.totalNormalisedPerMonth();
 
-    _renderKPIs({ currentFixed, currentVariable, prevFixed, yoyFixed, normalised });
+    _renderKPIs({ currentFixed, currentVariable, currentInternal, prevFixed, yoyFixed, normalised });
     _renderTrendChart();
     _renderCategoryChart(year, month);
     _renderDeviations(year, month, prevYear, prevMonth, yoyYear, yoyMonth);
@@ -57,7 +58,7 @@ const Dashboard = (() => {
 
   // ---- KPI cards ----
 
-  function _renderKPIs({ currentFixed, currentVariable, prevFixed, yoyFixed, normalised }) {
+  function _renderKPIs({ currentFixed, currentVariable, currentInternal, prevFixed, yoyFixed, normalised }) {
     const momPct = prevFixed > 0 ? ((currentFixed - prevFixed) / prevFixed) * 100 : 0;
     const yoyPct = yoyFixed  > 0 ? ((currentFixed - yoyFixed)  / yoyFixed)  * 100 : 0;
 
@@ -90,6 +91,16 @@ const Dashboard = (() => {
         deltaType: '',
         accent:    'orange',
         tooltip:   'Alle uitgaven deze maand minus de vaste lasten. Denk aan boodschappen, horeca, kleding etc.',
+        detail:    null,
+      },
+      {
+        icon:      'fa-solid fa-right-left',
+        label:     'Interne overboekingen',
+        value:     `€${currentInternal.toFixed(0)}`,
+        delta:     'Overboekingen naar eigen rekeningen',
+        deltaType: '',
+        accent:    'gray',
+        tooltip:   'Bedrag overgeboekt naar eigen rekeningen deze maand. Telt niet mee als uitgave.',
         detail:    null,
       },
       {

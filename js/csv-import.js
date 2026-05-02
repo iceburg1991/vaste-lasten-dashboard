@@ -325,6 +325,11 @@ const CSVImport = (() => {
     const posts = DB.query('SELECT id, iban, search_term, category_id FROM recurring_posts');
     let imported = 0;
 
+    // Pre-fetch own account IBANs and "Eigen rekening" category ID
+    const ownIbans           = Settings.getOwnIbans();
+    const eigenRekeningCat   = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
+    const eigenRekeningCatId = eigenRekeningCat?.id || null;
+
     for (const row of parsedRows) {
       // Try to match transaction to a known recurring post
       let postId = null;
@@ -342,10 +347,15 @@ const CSVImport = (() => {
       }
 
       // Match label by IBAN or search term
-      const label  = Labels.findMatch(row.counterparty, row.description, row.amount);
+      const label   = Labels.findMatch(row.counterparty, row.description, row.amount);
       const labelId = label?.id || null;
       // Label category takes lower priority than post category
       if (!catId && label?.category_id) catId = label.category_id;
+
+      // Auto-assign "Eigen rekening" category for transfers to own accounts
+      if (!catId && row.counterparty && ownIbans.has(row.counterparty)) {
+        catId = eigenRekeningCatId;
+      }
 
       DB.run(
         `INSERT OR IGNORE INTO transactions
