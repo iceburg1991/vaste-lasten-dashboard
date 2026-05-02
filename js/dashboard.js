@@ -355,15 +355,32 @@ const Dashboard = (() => {
       const posts = Normalisation.getPostsNormalised();
       total = posts.reduce((s, p) => s + p.monthly_amount, 0);
       cols  = ['Post', 'Categorie', 'Bedrag', 'Frequentie', '÷12', '= €/maand'];
-      const bodyRows = posts.map(p => `
-        <tr>
-          <td>${p.name}</td>
-          <td><span class="badge">${p.category_name || '—'}</span></td>
-          <td>€${p.amount.toFixed(2)}</td>
-          <td>${freqLabel[p.frequency] || p.frequency + '×'}</td>
-          <td class="text-muted small">× ${p.frequency} ÷ 12</td>
-          <td class="amount-fixed">€${p.monthly_amount.toFixed(2)}</td>
-        </tr>`).join('');
+
+      // Fetch the first label linked to each post
+      const postLabels = DB.query(`
+        SELECT rp.id AS post_id, MIN(l.name) AS label_name
+        FROM   recurring_posts rp
+        JOIN   transactions t ON t.post_id = rp.id
+        JOIN   labels       l ON l.id      = t.label_id
+        GROUP  BY rp.id
+      `);
+      const labelMap = Object.fromEntries(postLabels.map(r => [r.post_id, r.label_name]));
+
+      const bodyRows = posts.map(p => {
+        const labelName   = labelMap[p.id];
+        const displayName = labelName
+          ? `<span class="label-pill">${labelName}</span>`
+          : p.name;
+        return `
+          <tr>
+            <td>${displayName}</td>
+            <td><span class="badge">${p.category_name || '—'}</span></td>
+            <td>€${p.amount.toFixed(2)}</td>
+            <td>${freqLabel[p.frequency] || p.frequency + '×'}</td>
+            <td class="text-muted small">× ${p.frequency} ÷ 12</td>
+            <td class="amount-fixed">€${p.monthly_amount.toFixed(2)}</td>
+          </tr>`;
+      }).join('');
       _showDetailModal(title, cols, bodyRows, total);
     }
   }
