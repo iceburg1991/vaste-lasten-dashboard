@@ -69,14 +69,18 @@ const Dashboard = (() => {
         delta:     `MoM: ${_signedPct(momPct)}`,
         deltaType: _deltaType(momPct),
         accent:    'blue',
+        tooltip:   'Som van alle vaste posten die deze maand daadwerkelijk van je rekening zijn afgeschreven.',
+        detail:    'actual',
       },
       {
         icon:      'fa-solid fa-calculator',
         label:     'Genormaliseerd / maand',
         value:     `€${normalised.toFixed(0)}`,
-        delta:     'Gebaseerd op alle vaste posten',
+        delta:     'Wat je maandelijks zou moeten reserveren',
         deltaType: '',
         accent:    'green',
+        tooltip:   'Alle vaste posten omgerekend naar een maandbedrag. Bijv. een jaarlijkse verzekering van €240 telt als €20/maand. Dit is wat je structureel kwijt bent, ongeacht wanneer je betaalt.',
+        detail:    'normalised',
       },
       {
         icon:      'fa-solid fa-cart-shopping',
@@ -85,23 +89,36 @@ const Dashboard = (() => {
         delta:     'Niet-vaste uitgaven deze maand',
         deltaType: '',
         accent:    'orange',
+        tooltip:   'Alle uitgaven deze maand minus de vaste lasten. Denk aan boodschappen, horeca, kleding etc.',
+        detail:    null,
       },
       {
         icon:      'fa-solid fa-chart-line',
         label:     'Jaar-op-jaar',
         value:     _signedPct(yoyPct),
-        delta:     yoyFixed > 0 ? `vs €${yoyFixed.toFixed(0)} last year` : 'Geen data from last year',
+        delta:     yoyFixed > 0 ? `vs €${yoyFixed.toFixed(0)} vorig jaar` : 'Geen data van vorig jaar',
         deltaType: _deltaType(yoyPct),
         accent:    yoyPct > CONFIG.DEVIATION_THRESHOLD * 100 ? 'red' : 'green',
+        tooltip:   'Vergelijking van je vaste lasten deze maand ten opzichte van dezelfde maand vorig jaar.',
+        detail:    null,
       },
     ];
 
     document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
       <div class="kpi-card kpi-${k.accent}">
-        <div class="kpi-icon"><i class="${k.icon}"></i></div>
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="${k.icon}"></i></div>
+          <div class="kpi-tooltip-wrap">
+            <i class="fa-solid fa-circle-info kpi-info-icon" title="${k.tooltip}"></i>
+          </div>
+        </div>
         <div class="kpi-label">${k.label}</div>
         <div class="kpi-value">${k.value}</div>
         <div class="kpi-delta ${k.deltaType}">${k.delta}</div>
+        ${k.detail ? `
+          <button class="kpi-detail-btn" onclick="Dashboard.openDetail('${k.detail}')">
+            <i class="fa-solid fa-table-list"></i> Hoe is dit berekend?
+          </button>` : ''}
       </div>
     `).join('');
   }
@@ -299,5 +316,65 @@ const Dashboard = (() => {
     };
   }
 
-  return { render, populateMonthSelector };
+  // Open detail modal showing breakdown of a KPI
+  function openDetail(type) {
+    const ym    = document.getElementById('month-select')?.value;
+    if (!ym) return;
+    const [year, month] = ym.split('-').map(Number);
+    const monthStr      = `${year}-${String(month).padStart(2,'0')}`;
+
+    let title, rows, cols, total;
+
+    if (type === 'actual') {
+      // Breakdown of actual fixed costs this month
+      title = 'Vaste lasten (werkelijk) — opbouw';
+      rows  = DB.query(`
+        SELECT rp.name, c.name AS cat, t.amount, t.date
+        FROM   transactions t
+        JOIN   recurring_posts rp ON rp.id = t.post_id
+        LEFT   JOIN categories c  ON c.id  = rp.category_id
+        WHERE  t.type = 'debit' AND t.date LIKE ?
+        ORDER  BY t.amount DESC
+      `, [`${monthStr}%`]);
+      total = rows.reduce((s, r) => s + r.amount, 0);
+      cols  = ['Post', 'Categorie', 'Datum', 'Bedrag'];
+      const bodyRows = rows.map(r => `
+        <tr>
+          <td>${r.name}</td>
+          <td><span class="badge">${r.cat || '—'}</span></td>
+          <td>${r.date}</td>
+          <td class="amount-debit">€${r.amount.toFixed(2)}</td>
+        </tr>`).join('');
+      _showDetailModal(title, cols, bodyRows, total);
+
+    } else if (type === 'normalised') {
+      // Breakdown of normalised monthly amount per post
+      title = 'Genormaliseerd / maand — opbouw';
+      const freqLabel = { 12:'Maandelijks', 10:'10×/jaar', 6:'Halfjaarlijks', 4:'Per kwartaal', 2:'2×/jaar', 1:'Jaarlijks' };
+      const posts = Normalisation.getPostsNormalised();
+      total = posts.reduce((s, p) => s + p.monthly_amount, 0);
+      cols  = ['Post', 'Categorie', 'Bedrag', 'Frequentie', '÷12', '= €/maand'];
+      const bodyRows = posts.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td><span class="badge">${p.category_name || '—'}</span></td>
+          <td>€${p.amount.toFixed(2)}</td>
+          <td>${freqLabel[p.frequency] || p.frequency + '×'}</td>
+          <td class="text-muted small">× ${p.frequency} ÷ 12</td>
+          <td class="amount-fixed">€${p.monthly_amount.toFixed(2)}</td>
+        </tr>`).join('');
+      _showDetailModal(title, cols, bodyRows, total);
+    }
+  }
+
+  function _showDetailModal(title, cols, bodyRows, total) {
+    document.getElementById('detail-modal-title').textContent = title;
+    document.getElementById('detail-modal-thead').innerHTML =
+      cols.map(c => `<th>${c}</th>`).join('');
+    document.getElementById('detail-modal-tbody').innerHTML = bodyRows;
+    document.getElementById('detail-modal-total').textContent = `Totaal: €${total.toFixed(2)}`;
+    UI.openModal('modal-detail');
+  }
+
+  return { render, populateMonthSelector, openDetail };
 })();

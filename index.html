@@ -337,6 +337,23 @@
   </div>
 </div>
 
+<!-- KPI detail modal -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-title" id="detail-modal-title"></div>
+    <div class="table-wrap" style="margin-bottom:12px;">
+      <table>
+        <thead><tr id="detail-modal-thead"></tr></thead>
+        <tbody id="detail-modal-tbody"></tbody>
+      </table>
+    </div>
+    <div style="text-align:right;font-weight:600;color:#2563eb;font-size:15px;" id="detail-modal-total"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="UI.closeModal('modal-detail')">Sluiten</button>
+    </div>
+  </div>
+</div>
+
 <!-- Link transaction modal -->
 <div class="modal-overlay" id="modal-link-transaction">
   <div class="modal">
