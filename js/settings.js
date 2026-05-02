@@ -13,7 +13,7 @@ const Settings = (() => {
         <td>${c.name}</td>
         <td>
           <button class="btn btn-sm btn-danger" onclick="Settings.deleteCategory(${c.id}, '${c.name}')">
-            <i class="fa-solid fa-trash"></i> Remove
+            <i class="fa-solid fa-trash"></i> Verwijderen
           </button>
         </td>
       </tr>
@@ -34,7 +34,7 @@ const Settings = (() => {
   }
 
   function deleteCategory(id, name) {
-    if (confirm(`Remove category "${name}"? Posts using it will become uncategorised.`)) {
+    if (confirm(`Verwijderen category "${name}"? Posten die deze categorie gebruiken worden ongecategoriseerd.`)) {
       DB.run('UPDATE recurring_posts SET category_id = NULL WHERE category_id = ?', [id]);
       DB.run('DELETE FROM categories WHERE id = ?', [id]);
       render();

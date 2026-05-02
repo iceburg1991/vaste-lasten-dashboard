@@ -6,7 +6,7 @@ const Dashboard = (() => {
   let trendChart = null;
   let catChart   = null;
 
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTHS = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
 
   const CHART_COLORS = [
     '#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2',
@@ -19,7 +19,7 @@ const Dashboard = (() => {
     );
     const sel = document.getElementById('month-select');
     if (rows.length === 0) {
-      sel.innerHTML = '<option>No data</option>';
+      sel.innerHTML = '<option>Geen data</option>';
       return;
     }
     sel.innerHTML = rows.map(r => `<option value="${r.ym}">${_formatYM(r.ym)}</option>`).join('');
@@ -30,7 +30,7 @@ const Dashboard = (() => {
     if (!DB.isReady()) return;
 
     const ym = document.getElementById('month-select')?.value;
-    if (!ym || ym === 'No data') { _renderEmpty(); return; }
+    if (!ym || ym === 'Geen data') { _renderEmpty(); return; }
 
     const [year, month] = ym.split('-').map(Number);
 
@@ -64,7 +64,7 @@ const Dashboard = (() => {
     const kpis = [
       {
         icon:      'fa-solid fa-money-bill-wave',
-        label:     'Fixed costs (actual)',
+        label:     'Vaste lasten (werkelijk)',
         value:     `€${currentFixed.toFixed(0)}`,
         delta:     `MoM: ${_signedPct(momPct)}`,
         deltaType: _deltaType(momPct),
@@ -72,25 +72,25 @@ const Dashboard = (() => {
       },
       {
         icon:      'fa-solid fa-calculator',
-        label:     'Normalised / month',
+        label:     'Genormaliseerd / maand',
         value:     `€${normalised.toFixed(0)}`,
-        delta:     'Based on all recurring posts',
+        delta:     'Gebaseerd op alle vaste posten',
         deltaType: '',
         accent:    'green',
       },
       {
         icon:      'fa-solid fa-cart-shopping',
-        label:     'Variable costs',
+        label:     'Variabele kosten',
         value:     `€${Math.max(0, currentVariable).toFixed(0)}`,
-        delta:     'Non-fixed spending this month',
+        delta:     'Niet-vaste uitgaven deze maand',
         deltaType: '',
         accent:    'orange',
       },
       {
         icon:      'fa-solid fa-chart-line',
-        label:     'Year-over-year',
+        label:     'Jaar-op-jaar',
         value:     _signedPct(yoyPct),
-        delta:     yoyFixed > 0 ? `vs €${yoyFixed.toFixed(0)} last year` : 'No data from last year',
+        delta:     yoyFixed > 0 ? `vs €${yoyFixed.toFixed(0)} last year` : 'Geen data from last year',
         deltaType: _deltaType(yoyPct),
         accent:    yoyPct > CONFIG.DEVIATION_THRESHOLD * 100 ? 'red' : 'green',
       },
@@ -129,7 +129,7 @@ const Dashboard = (() => {
         labels,
         datasets: [
           {
-            label:           'Actual fixed costs',
+            label:           'Werkelijke vaste lasten',
             data:            actuals,
             backgroundColor: 'rgba(37,99,235,0.15)',
             borderColor:     '#2563eb',
@@ -137,7 +137,7 @@ const Dashboard = (() => {
             borderRadius:    4,
           },
           {
-            label:       'Normalised average',
+            label:       'Genormaliseerd gemiddelde',
             data:        normLine,
             type:        'line',
             borderColor: '#d97706',
@@ -171,7 +171,7 @@ const Dashboard = (() => {
     catChart = new Chart(document.getElementById('chart-cat'), {
       type: 'doughnut',
       data: {
-        labels:   rows.map(r => r.cat || 'Other'),
+        labels:   rows.map(r => r.cat || 'Overig'),
         datasets: [{
           data:            rows.map(r => parseFloat(r.total?.toFixed(2) || 0)),
           backgroundColor: CHART_COLORS.slice(0, rows.length),
@@ -224,7 +224,7 @@ const Dashboard = (() => {
     if (deviations.length === 0) {
       tbody.innerHTML = `
         <tr><td colspan="7" class="empty-state">
-          <i class="fa-solid fa-circle-check"></i> No significant deviations this month
+          <i class="fa-solid fa-circle-check"></i> Geen significante afwijkingen deze maand
         </td></tr>`;
       return;
     }
@@ -232,7 +232,7 @@ const Dashboard = (() => {
     tbody.innerHTML = deviations.map(d => `
       <tr>
         <td>${d.post.name}</td>
-        <td><span class="badge">${d.post.category_name || 'Other'}</span></td>
+        <td><span class="badge">${d.post.category_name || 'Overig'}</span></td>
         <td>€${d.prev.toFixed(2)}</td>
         <td><strong>€${d.current.toFixed(2)}</strong></td>
         <td>€${d.yoy.toFixed(2)}</td>
@@ -250,7 +250,7 @@ const Dashboard = (() => {
     document.getElementById('kpi-grid').innerHTML = `
       <div class="empty-state" style="grid-column:1/-1">
         <i class="fa-solid fa-file-import fa-2x"></i>
-        <p>Import a bank statement to see data.</p>
+        <p>Importeer eerst een bankafschrift om data te zien.</p>
       </div>`;
   }
 

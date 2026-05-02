@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fixed Costs Dashboard</title>
+  <title>Vaste Lasten Dashboard</title>
 
   <!--
     DEPLOYMENT INSTRUCTIONS
@@ -41,25 +41,25 @@
   <div class="landing-box">
     <div class="landing-title">Fixed Costs</div>
     <p class="landing-sub">
-      Insight into your monthly costs, normalised from your Rabobank statements.
+      Inzicht in je maandelijkse kosten, genormaliseerd vanuit je Rabobank afschriften.
     </p>
 
     <div class="landing-options">
       <button class="landing-btn" onclick="UI.connectGoogleDrive()">
-        <span class="btn-title"><i class="fa-solid fa-cloud"></i> Connect Google Drive</span>
-        <span class="btn-desc">Store database in Google Drive — accessible on any device</span>
+        <span class="btn-title"><i class="fa-solid fa-cloud"></i> Verbinden met Google Drive</span>
+        <span class="btn-desc">Database opslaan in Google Drive — toegankelijk op elk apparaat</span>
       </button>
 
       <div class="landing-divider">or</div>
 
       <button class="landing-btn" onclick="DB.loadFromFile()">
-        <span class="btn-title"><i class="fa-solid fa-folder-open"></i> Load existing database</span>
-        <span class="btn-desc">Load a previously downloaded .sqlite file</span>
+        <span class="btn-title"><i class="fa-solid fa-folder-open"></i> Bestaande database laden</span>
+        <span class="btn-desc">Laad een eerder gedownloade .sqlite file</span>
       </button>
 
       <button class="landing-btn" onclick="DB.createNew()">
-        <span class="btn-title"><i class="fa-solid fa-plus"></i> Create new database</span>
-        <span class="btn-desc">Start fresh, saved locally</span>
+        <span class="btn-title"><i class="fa-solid fa-plus"></i> Nieuwe database aanmaken</span>
+        <span class="btn-desc">Begin vanaf nul, lokaal opgeslagen</span>
       </button>
     </div>
   </div>
@@ -73,17 +73,17 @@
   <!-- Topbar -->
   <div class="topbar">
     <div class="topbar-title">
-      <i class="fa-solid fa-chart-pie"></i> Fixed Costs
+      <i class="fa-solid fa-chart-pie"></i> Vaste Lasten
     </div>
     <div class="topbar-actions">
       <span id="drive-status">
-        <i class="fa-solid fa-circle-dot"></i> Local
+        <i class="fa-solid fa-circle-dot"></i> Lokaal
       </span>
       <button class="btn" onclick="CSVImport.openModal()">
-        <i class="fa-solid fa-file-import"></i> Import statement
+        <i class="fa-solid fa-file-import"></i> Afschrift importeren
       </button>
       <button class="btn" onclick="DB.save()">
-        <i class="fa-solid fa-floppy-disk"></i> Save
+        <i class="fa-solid fa-floppy-disk"></i> Opslaan
       </button>
     </div>
   </div>
@@ -97,13 +97,13 @@
         <i class="fa-solid fa-gauge-high"></i> Dashboard
       </button>
       <button class="tab-btn" data-tab="posts" onclick="UI.switchTab('posts')">
-        <i class="fa-solid fa-list"></i> Recurring Posts
+        <i class="fa-solid fa-list"></i> Vaste Posten
       </button>
       <button class="tab-btn" data-tab="transactions" onclick="UI.switchTab('transactions')">
-        <i class="fa-solid fa-receipt"></i> Transactions
+        <i class="fa-solid fa-receipt"></i> Transacties
       </button>
       <button class="tab-btn" data-tab="settings" onclick="UI.switchTab('settings')">
-        <i class="fa-solid fa-gear"></i> Settings
+        <i class="fa-solid fa-gear"></i> Instellingen
       </button>
     </div>
 
@@ -111,7 +111,7 @@
     <div id="tab-dashboard" class="tab-content active">
 
       <div class="month-selector">
-        <span class="text-muted text-xs">Period:</span>
+        <span class="text-muted text-xs">Periode:</span>
         <select id="month-select" onchange="Dashboard.render()"></select>
       </div>
 
@@ -121,19 +121,19 @@
       <!-- Charts -->
       <div class="charts-grid">
         <div class="chart-card">
-          <div class="chart-title">Fixed costs per month (normalised)</div>
+          <div class="chart-title">Vaste lasten per maand (genormaliseerd)</div>
           <div class="chart-wrapper"><canvas id="chart-trend"></canvas></div>
         </div>
         <div class="chart-card">
-          <div class="chart-title">Breakdown by category</div>
+          <div class="chart-title">Verdeling per categorie</div>
           <div class="chart-wrapper"><canvas id="chart-cat"></canvas></div>
         </div>
       </div>
 
-      <!-- Deviations -->
+      <!-- Afwijkingen -->
       <div class="section-title">
         <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
-        Deviations
+        Afwijkingen
         <span class="badge" id="deviations-count">0</span>
       </div>
       <div class="table-wrap">
@@ -141,10 +141,10 @@
           <thead>
             <tr>
               <th>Post</th>
-              <th>Category</th>
-              <th>Previous month</th>
-              <th>Current</th>
-              <th>Same month last year</th>
+              <th>Categorie</th>
+              <th>Vorige maand</th>
+              <th>Huidig</th>
+              <th>Zelfde maand vorig jaar</th>
               <th>Δ MoM</th>
               <th>Δ YoY</th>
             </tr>
@@ -157,22 +157,22 @@
     <!-- ---- TAB: RECURRING POSTS ---- -->
     <div id="tab-posts" class="tab-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div class="section-title" style="margin:0">Manage recurring posts</div>
+        <div class="section-title" style="margin:0">Beheer vaste posten</div>
         <button class="btn btn-primary" onclick="Posts.openModal()">
-          <i class="fa-solid fa-plus"></i> Add manually
+          <i class="fa-solid fa-plus"></i> Handmatig toevoegen
         </button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Frequency</th>
-              <th>Amount</th>
-              <th>€/month</th>
-              <th>Note</th>
-              <th>Actions</th>
+              <th>Naam</th>
+              <th>Categorie</th>
+              <th>Frequentie</th>
+              <th>Bedrag</th>
+              <th>€/maand</th>
+              <th>Notitie</th>
+              <th>Acties</th>
             </tr>
           </thead>
           <tbody id="posts-tbody"></tbody>
@@ -183,18 +183,18 @@
     <!-- ---- TAB: TRANSACTIONS ---- -->
     <div id="tab-transactions" class="tab-content">
       <div class="month-selector">
-        <span class="text-muted text-xs">Month:</span>
-        <select id="trans-month-select" onchange="Transactions.render()"></select>
+        <span class="text-muted text-xs">Maand:</span>
+        <select id="trans-month-select" onchange="Transacties.render()"></select>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Counterparty</th>
-              <th>Amount</th>
-              <th>Category</th>
+              <th>Datum</th>
+              <th>Omschrijving</th>
+              <th>Tegenpartij</th>
+              <th>Bedrag</th>
+              <th>Categorie</th>
               <th>Type</th>
             </tr>
           </thead>
@@ -205,15 +205,15 @@
 
     <!-- ---- TAB: SETTINGS ---- -->
     <div id="tab-settings" class="tab-content">
-      <div class="section-title">Categories</div>
+      <div class="section-title">Categorieën</div>
       <div class="table-wrap" style="margin-bottom:16px;">
         <table>
-          <thead><tr><th>Name</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Naam</th><th>Acties</th></tr></thead>
           <tbody id="cats-tbody"></tbody>
         </table>
       </div>
-      <button class="btn btn-primary" onclick="Settings.openAddModal()">
-        <i class="fa-solid fa-plus"></i> Add category
+      <button class="btn btn-primary" onclick="Instellingen.openAddModal()">
+        <i class="fa-solid fa-plus"></i> Categorie toevoegen
       </button>
 
       <div class="section-title" style="margin-top:32px;">Database</div>
@@ -222,7 +222,7 @@
           <i class="fa-solid fa-download"></i> Download .sqlite backup
         </button>
         <button class="btn btn-danger" onclick="DB.reset()">
-          <i class="fa-solid fa-triangle-exclamation"></i> Reset database
+          <i class="fa-solid fa-triangle-exclamation"></i> Database resetten
         </button>
       </div>
     </div>
@@ -237,13 +237,13 @@
 <!-- Import modal -->
 <div class="modal-overlay" id="modal-import">
   <div class="modal">
-    <div class="modal-title">Import Rabobank CSV</div>
+    <div class="modal-title">Rabobank CSV importeren</div>
     <div class="alert alert-info">
       <i class="fa-solid fa-circle-info"></i>
-      Export your statement via Rabobank Online Banking → Download → CSV format.
+      Exporteer je afschrift via Rabobank Online Banking → Downloaden → CSV formaat.
     </div>
     <div class="form-group">
-      <label class="form-label">Select CSV file</label>
+      <label class="form-label">Selecteer CSV bestand</label>
       <input type="file" id="csv-file-input" accept=".csv" class="form-input" onchange="CSVImport.onFileChanged(event)" />
     </div>
     <div id="import-preview" style="display:none;">
@@ -251,15 +251,15 @@
     </div>
     <div id="review-section" style="display:none;">
       <div class="section-title" style="margin-top:16px;">
-        Possible recurring — please review
+        Mogelijke vaste lasten — controleer deze
         <span class="badge" id="review-count">0</span>
       </div>
       <div id="review-items"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn" onclick="UI.closeModal('modal-import')">Cancel</button>
+      <button class="btn" onclick="UI.closeModal('modal-import')">Annuleren</button>
       <button class="btn btn-primary" id="btn-import-confirm" onclick="CSVImport.confirmImport()" disabled>
-        Import
+        Importeren
       </button>
     </div>
   </div>
@@ -268,61 +268,61 @@
 <!-- Recurring post modal -->
 <div class="modal-overlay" id="modal-post">
   <div class="modal">
-    <div class="modal-title" id="modal-post-title">Add recurring post</div>
+    <div class="modal-title" id="modal-post-title">Vaste post toevoegen</div>
     <input type="hidden" id="post-id" />
     <div class="form-group">
-      <label class="form-label">Name</label>
-      <input type="text" id="post-name" class="form-input" placeholder="e.g. Ziggo Subscription" />
+      <label class="form-label">Naam</label>
+      <input type="text" id="post-name" class="form-input" placeholder="bijv. Ziggo Abonnement" />
     </div>
     <div class="form-group">
-      <label class="form-label">Category</label>
+      <label class="form-label">Categorie</label>
       <select id="post-cat" class="form-select"></select>
     </div>
     <div class="form-group">
-      <label class="form-label">Frequency</label>
+      <label class="form-label">Frequentie</label>
       <select id="post-freq" class="form-select">
-        <option value="12">Monthly (12×/year)</option>
-        <option value="10">10× per year (e.g. municipal tax)</option>
-        <option value="6">Every 6 months (2×/year)</option>
-        <option value="4">Quarterly (4×/year)</option>
-        <option value="2">Twice per year</option>
-        <option value="1">Annually (1×/year)</option>
+        <option value="12">Maandelijks (12×/jaar)</option>
+        <option value="10">10× per jaar (bijv. gemeentebelasting)</option>
+        <option value="6">Halfjaarlijks (2×/jaar)</option>
+        <option value="4">Per kwartaal (4×/jaar)</option>
+        <option value="2">2× per jaar</option>
+        <option value="1">Jaarlijks (1×/jaar)</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Amount per payment (€)</label>
+      <label class="form-label">Bedrag per payment (€)</label>
       <input type="number" id="post-amount" class="form-input" placeholder="e.g. 89.99" step="0.01" min="0" />
     </div>
     <div class="form-group">
-      <label class="form-label">Counterparty IBAN (optional — for auto-matching)</label>
+      <label class="form-label">Tegenpartij IBAN (optional — for auto-matching)</label>
       <input type="text" id="post-iban" class="form-input" placeholder="e.g. NL91ABNA0417164300" />
     </div>
     <div class="form-group">
-      <label class="form-label">Search term in description (optional)</label>
-      <input type="text" id="post-searchterm" class="form-input" placeholder="e.g. ZIGGO or BELASTING" />
+      <label class="form-label">Zoekterm in omschrijving (optioneel)</label>
+      <input type="text" id="post-searchterm" class="form-input" placeholder="bijv. ZIGGO of BELASTING" />
     </div>
     <div class="form-group">
-      <label class="form-label">Note</label>
-      <textarea id="post-note" class="form-textarea" placeholder="e.g. expires March 2026"></textarea>
+      <label class="form-label">Notitie</label>
+      <textarea id="post-note" class="form-textarea" placeholder="bijv. loopt af maart 2026"></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn" onclick="UI.closeModal('modal-post')">Cancel</button>
-      <button class="btn btn-primary" onclick="Posts.save()">Save</button>
+      <button class="btn" onclick="UI.closeModal('modal-post')">Annuleren</button>
+      <button class="btn btn-primary" onclick="Posts.save()">Opslaan</button>
     </div>
   </div>
 </div>
 
-<!-- Category modal -->
+<!-- Categorie modal -->
 <div class="modal-overlay" id="modal-cat">
   <div class="modal" style="max-width:360px;">
-    <div class="modal-title">Add category</div>
+    <div class="modal-title">Categorie toevoegen</div>
     <div class="form-group">
-      <label class="form-label">Name</label>
-      <input type="text" id="cat-name" class="form-input" placeholder="e.g. Pets" />
+      <label class="form-label">Naam</label>
+      <input type="text" id="cat-name" class="form-input" placeholder="bijv. Huisdieren" />
     </div>
     <div class="modal-actions">
-      <button class="btn" onclick="UI.closeModal('modal-cat')">Cancel</button>
-      <button class="btn btn-primary" onclick="Settings.saveCategory()">Add</button>
+      <button class="btn" onclick="UI.closeModal('modal-cat')">Annuleren</button>
+      <button class="btn btn-primary" onclick="Instellingen.saveCategorie()">Add</button>
     </div>
   </div>
 </div>

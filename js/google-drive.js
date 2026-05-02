@@ -20,7 +20,7 @@ const GoogleDrive = (() => {
     const script    = document.createElement('script');
     script.src      = 'https://accounts.google.com/gsi/client';
     script.onload   = _requestToken;
-    script.onerror  = () => UI.toast('Could not load Google Sign-In. Check your internet connection.');
+    script.onerror  = () => UI.toast('Google Sign-In kon niet geladen worden. Controleer je internetverbinding.');
     document.head.appendChild(script);
   }
 
@@ -30,7 +30,7 @@ const GoogleDrive = (() => {
       scope:     CONFIG.GOOGLE_DRIVE_SCOPE,
       callback:  async response => {
         if (response.error) {
-          UI.toast('Google Drive connection failed: ' + response.error);
+          UI.toast('Google Drive verbinding mislukt: ' + response.error);
           return;
         }
         accessToken = response.access_token;

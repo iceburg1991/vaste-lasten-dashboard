@@ -136,15 +136,15 @@ const DB = (() => {
     const saved = await GoogleDrive.upload();
     if (!saved) {
       downloadSqlite();
-      UI.toast('Saved locally — store the file in Google Drive as a backup.');
+      UI.toast('Lokaal opgeslagen — bewaar het bestand in Google Drive als backup.');
     } else {
-      UI.toast('Saved to Google Drive.');
+      UI.toast('Opgeslagen in Google Drive.');
     }
   }
 
   // Wipe everything and start fresh
   function reset() {
-    if (confirm('Reset all data? This cannot be undone.')) {
+    if (confirm('Alle data wissen? Dit kan niet ongedaan worden gemaakt.')) {
       createNew();
     }
   }

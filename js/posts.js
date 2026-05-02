@@ -4,12 +4,12 @@
 
 const Posts = (() => {
   const FREQ_LABELS = {
-    12: 'Monthly',
-    10: '10×/year',
-    6:  'Every 6 months',
-    4:  'Quarterly',
-    2:  'Twice/year',
-    1:  'Annually',
+    12: 'Maandelijks',
+    10: '10×/jaar',
+    6:  'Halfjaarlijks',
+    4:  'Per kwartaal',
+    2:  '2×/jaar',
+    1:  'Jaarlijks',
   };
 
   // Render the recurring posts table
@@ -20,7 +20,7 @@ const Posts = (() => {
     if (posts.length === 0) {
       tbody.innerHTML = `
         <tr><td colspan="7" class="empty-state">
-          No recurring posts yet. Import a statement or add one manually.
+          Nog geen vaste posten. Importeer een afschrift of voeg handmatig toe.
         </td></tr>`;
       return;
     }
@@ -52,7 +52,7 @@ const Posts = (() => {
       cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
     document.getElementById('modal-post-title').textContent =
-      id ? 'Edit recurring post' : 'Add recurring post';
+      id ? 'Vaste post bewerken' : 'Add recurring post';
     document.getElementById('post-id').value = id || '';
 
     if (id) {
@@ -86,7 +86,7 @@ const Posts = (() => {
     const note       = document.getElementById('post-note').value.trim()       || null;
 
     if (!name || isNaN(amount)) {
-      UI.toast('Name and amount are required.');
+      UI.toast('Naam en bedrag zijn verplicht.');
       return;
     }
 
@@ -111,7 +111,7 @@ const Posts = (() => {
   }
 
   function deletePost(id) {
-    if (confirm('Delete this recurring post?')) {
+    if (confirm('Vaste post verwijderen?')) {
       DB.run('DELETE FROM recurring_posts WHERE id = ?', [id]);
       render();
       Dashboard.render();

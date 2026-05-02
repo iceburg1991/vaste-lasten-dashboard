@@ -18,7 +18,7 @@ const CONFIG = {
   DB_FILENAME: 'vaste-lasten.sqlite',
 
   // Default expense categories
-  DEFAULT_CATEGORIES: ['Housing', 'Transport', 'Insurance', 'Subscriptions', 'Taxes', 'Other'],
+  DEFAULT_CATEGORIES: ['Wonen', 'Transport', 'Verzekeringen', 'Abonnementen', 'Belastingen', 'Overig'],
 
   // Minimum number of occurrences before a transaction is flagged as recurring
   RECURRENCE_MIN_COUNT: 2,

@@ -50,7 +50,7 @@ const CSVImport = (() => {
     if (!file) return;
 
     // Show loading state
-    document.getElementById('import-preview-text').textContent = 'Reading file...';
+    document.getElementById('import-preview-text').textContent = 'Bestand inlezen...';
     document.getElementById('import-preview').style.display = 'block';
 
     try {
@@ -59,7 +59,7 @@ const CSVImport = (() => {
 
       if (allRows.length === 0) {
         document.getElementById('import-preview-text').textContent =
-          'No transactions found. Make sure you selected a Rabobank CSV file.';
+          'Geen transacties gevonden. Controleer of je een Rabobank CSV bestand hebt geselecteerd.';
         return;
       }
 
@@ -81,7 +81,7 @@ const CSVImport = (() => {
       console.log('[CSV] New rows after dedup:', newRows.length);
 
       document.getElementById('import-preview-text').textContent =
-        `${newRows.length} new transactions found (${allRows.length - newRows.length} duplicates skipped)`;
+        `${newRows.length} nieuwe transacties gevonden (${allRows.length - newRows.length} duplicaten overgeslagen)`;
 
       parsedRows = newRows;
 
@@ -98,7 +98,7 @@ const CSVImport = (() => {
     } catch (err) {
       console.error('[CSV] Parse error:', err);
       document.getElementById('import-preview-text').textContent =
-        'Error reading file: ' + err.message;
+        'Fout bij inlezen bestand: ' + err.message;
     }
   }
 
@@ -124,7 +124,7 @@ const CSVImport = (() => {
       const description = [cols[19], cols[20], cols[21]]
         .map(s => s?.trim()).filter(Boolean).join(' ').trim()
         || cols[9]?.trim()
-        || 'Unknown';
+        || 'Onbekend';
 
       rows.push({
         sequenceNr:   cols[3]?.trim() || null,
@@ -173,15 +173,15 @@ const CSVImport = (() => {
       .map(r => r.search_term?.toUpperCase());
 
     const candidates = [];
-    const seen       = new Set();
+    const gezien       = new Set();
 
     for (const row of newRows) {
       if (row.type !== 'debit') continue;
       const key = row.counterparty || row.description.substring(0, 30);
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (gezien.has(key)) continue;
+      gezien.add(key);
 
-      // Skip if already registered as a recurring post
+      // Overslaan if already registered as a recurring post
       if (knownIbans.has(row.counterparty)) continue;
       if (knownTerms.some(t => t && row.description.toUpperCase().includes(t))) continue;
 
@@ -204,27 +204,27 @@ const CSVImport = (() => {
     const cats       = DB.query('SELECT id, name FROM categories');
     const catOptions = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     const freqOptions = `
-      <option value="12">Monthly (12×/year)</option>
-      <option value="10">10× per year (e.g. municipal tax)</option>
-      <option value="6">Every 6 months</option>
-      <option value="4">Quarterly (4×/year)</option>
-      <option value="2">Twice per year</option>
-      <option value="1">Annually (1×/year)</option>
+      <option value="12">Maandelijks (12×/jaar)</option>
+      <option value="10">10× per jaar (bijv. gemeentebelasting)</option>
+      <option value="6">Halfjaarlijks</option>
+      <option value="4">Per kwartaal (4×/jaar)</option>
+      <option value="2">2× per jaar</option>
+      <option value="1">Jaarlijks (1×/jaar)</option>
     `;
 
     const html = items.map((item, i) => `
       <div class="review-item" id="review-${i}">
         <div class="review-item-name">${item.description.substring(0, 60)}</div>
         <div class="review-item-meta">
-          ${item.counterparty || 'unknown IBAN'} · €${item.amount.toFixed(2)} · seen ${item.histCount}× before
+          ${item.counterparty || 'onbekend IBAN'} · €${item.amount.toFixed(2)} · gezien ${item.histCount}× eerder
         </div>
         <div class="review-item-actions">
           <select class="form-select" id="rev-cat-${i}" style="width:160px;">${catOptions}</select>
           <select class="form-select" id="rev-freq-${i}" style="width:180px;">${freqOptions}</select>
           <button class="btn btn-sm btn-primary" onclick="CSVImport.acceptReview(${i})">
-            <i class="fa-solid fa-check"></i> Recurring
+            <i class="fa-solid fa-check"></i> Vaste last
           </button>
-          <button class="btn btn-sm" onclick="CSVImport.rejectReview(${i})">Skip</button>
+          <button class="btn btn-sm" onclick="CSVImport.rejectReview(${i})">Overslaan</button>
         </div>
       </div>
     `).join('');
@@ -298,7 +298,7 @@ const CSVImport = (() => {
     Posts.render();
     Transactions.populateMonthSelector();
     Transactions.render();
-    UI.toast(`${imported} transactions imported.`);
+    UI.toast(`${imported} transacties geïmporteerd.`);
   }
 
   return { openModal, onFileChanged, confirmImport, acceptReview, rejectReview };
