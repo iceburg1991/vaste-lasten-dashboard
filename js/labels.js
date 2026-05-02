@@ -123,20 +123,27 @@ const Labels = (() => {
       id ? 'Label bewerken' : 'Label toevoegen';
     document.getElementById('label-id').value = id || '';
 
+    // Helper to safely set a form field value
+    const setField = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val ?? '';
+    };
+
     if (id) {
       const label = DB.query('SELECT * FROM labels WHERE id = ?', [id])[0];
       if (label) {
-        document.getElementById('label-name').value        = label.name;
-        document.getElementById('label-iban').value        = label.iban        || '';
-        document.getElementById('label-searchterm').value  = label.search_term || '';
-        document.getElementById('label-amount').value      = label.amount      || '';
-        document.getElementById('label-cat').value         = label.category_id || '';
+        setField('label-name',       label.name);
+        setField('label-iban',       label.iban        || '');
+        setField('label-searchterm', label.search_term || '');
+        setField('label-amount',     label.amount      || '');
+        setField('label-cat',        label.category_id || '');
       }
     } else {
-      document.getElementById('label-name').value       = prefill.name        || '';
-      document.getElementById('label-iban').value       = prefill.iban        || '';
-      document.getElementById('label-searchterm').value = prefill.search_term || '';
-      document.getElementById('label-cat').value        = '';
+      setField('label-name',       prefill.name        || '');
+      setField('label-iban',       prefill.iban        || '');
+      setField('label-searchterm', prefill.search_term || '');
+      setField('label-amount',     prefill.amount      || '');
+      setField('label-cat',        '');
     }
 
     UI.openModal('modal-label');
