@@ -205,6 +205,7 @@
               <th>Bedrag</th>
               <th>Categorie</th>
               <th>Type</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="trans-tbody"></tbody>
@@ -332,6 +333,79 @@
     <div class="modal-actions">
       <button class="btn" onclick="UI.closeModal('modal-cat')">Annuleren</button>
       <button class="btn btn-primary" onclick="Settings.saveCategory()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Link transaction modal -->
+<div class="modal-overlay" id="modal-link-transaction">
+  <div class="modal">
+    <div class="modal-title">Markeren als vaste last</div>
+
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:20px;">
+      <div style="font-weight:500;" id="link-trans-desc"></div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:2px;" id="link-trans-amount"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" style="margin-bottom:16px;">
+      <button class="tab-btn active" id="link-tab-existing" onclick="Transactions._switchLinkTab('existing')">
+        Koppelen aan bestaande post
+      </button>
+      <button class="tab-btn" id="link-tab-new" onclick="Transactions._switchLinkTab('new')">
+        Nieuwe vaste post aanmaken
+      </button>
+    </div>
+
+    <!-- Panel: link to existing post -->
+    <div id="link-panel-existing">
+      <div class="form-group">
+        <label class="form-label">Vaste post</label>
+        <select id="link-post-select" class="form-select"></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="UI.closeModal('modal-link-transaction')">Annuleren</button>
+        <button class="btn btn-primary" onclick="Transactions.confirmLinkExisting()">
+          <i class="fa-solid fa-thumbtack"></i> Koppelen
+        </button>
+      </div>
+    </div>
+
+    <!-- Panel: create new post -->
+    <div id="link-panel-new" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Naam</label>
+        <input type="text" id="link-create-name" class="form-input" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categorie</label>
+        <select id="link-create-cat" class="form-select"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Frequentie</label>
+        <select id="link-create-freq" class="form-select">
+          <option value="12">Maandelijks (12×/jaar)</option>
+          <option value="10">10× per jaar (bijv. gemeentebelasting)</option>
+          <option value="6">Halfjaarlijks (2×/jaar)</option>
+          <option value="4">Per kwartaal (4×/jaar)</option>
+          <option value="2">2× per jaar</option>
+          <option value="1">Jaarlijks (1×/jaar)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bedrag per betaling (€)</label>
+        <input type="number" id="link-create-amount" class="form-input" step="0.01" min="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">IBAN tegenrekening</label>
+        <input type="text" id="link-create-iban" class="form-input" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="UI.closeModal('modal-link-transaction')">Annuleren</button>
+        <button class="btn btn-primary" onclick="Transactions.confirmLinkNew()">
+          <i class="fa-solid fa-plus"></i> Aanmaken & koppelen
+        </button>
+      </div>
     </div>
   </div>
 </div>
