@@ -47,7 +47,7 @@ const Transactions = (() => {
           <td>${r.description.substring(0, 50)}</td>
           <td class="text-muted small">${r.counterparty || '—'}</td>
           <td class="${r.type === 'credit' ? 'amount-credit' : 'amount-debit'}">
-            €${r.amount.toVast(2)}
+            €${r.amount.toFixed(2)}
           </td>
           <td><span class="badge">${r.cat_name || '—'}</span></td>
           <td>${typeLabel}</td>
