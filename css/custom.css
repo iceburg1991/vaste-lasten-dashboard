@@ -612,7 +612,8 @@ td { padding: 11px 16px; vertical-align: middle; }
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px;
+  gap: 12px;
+  padding: 2px;
 }
 
 .kpi-month-divider {
