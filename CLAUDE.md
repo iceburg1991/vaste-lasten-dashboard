@@ -28,11 +28,11 @@ python3 -m http.server 8080
 
 ### JavaScript modules
 
-All JS is vanilla, no ES modules. Each file is an IIFE that exposes a global object. **Script load order in `index.html` is a hard dependency** (line 599–610):
+All JS is vanilla, no ES modules. Each file is an IIFE that exposes a global object. **Script load order in `index.html` is a hard dependency** (line 599–611):
 
 ```
 config → ui → db → google-drive → normalisation → csv-import →
-dashboard → posts → transactions → labels → settings
+charts → dashboard → posts → transactions → labels → settings
 ```
 
 | Module | Responsibility |
@@ -42,7 +42,8 @@ dashboard → posts → transactions → labels → settings
 | `GoogleDrive` | OAuth token via Google Identity Services, Drive file CRUD (`drive.file` scope only) |
 | `Normalisation` | Converts amounts to monthly equivalents: `(amount × frequency) / 12` |
 | `CSVImport` | Parses Rabobank CSV (ISO-8859-1, 26 columns). Two-pass recurring detection |
-| `Dashboard` | KPI cards, Chart.js trend bar + category doughnut, deviations table |
+| `Charts` | Chart.js rendering: trend bar chart (last 12 months) + category doughnut with center total |
+| `Dashboard` | KPI cards and deviations table. Calls `Charts.renderTrend()` / `Charts.renderCategory()` |
 | `Posts` | CRUD for `recurring_posts` table |
 | `Transactions` | CRUD for `transactions` table, linking to posts/labels |
 | `Labels` | CRUD for `labels` table; `Labels.findMatch()` used during CSV import |
