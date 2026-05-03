@@ -43,9 +43,9 @@ const Dashboard = (() => {
     const yoyYear  = year - 1;
     const yoyMonth = month;
 
-    const currentFixed      = Normalisation.fixedCostsForMonth(year, month);
-    const currentStructural = Normalisation.structuralTransfersForMonth(year, month);
-    const currentIncidental = Normalisation.incidentalTransfersForMonth(year, month);
+    const currentFixed          = Normalisation.fixedCostsForMonth(year, month);
+    const currentStructural     = Normalisation.structuralTransfersForMonth(year, month);
+    const currentIncidental     = Normalisation.incidentalTransfersForMonth(year, month);
     const currentInternal   = currentStructural + currentIncidental;
     const currentVariable   = Normalisation.actualSpendingForMonth(year, month) - currentFixed - currentInternal;
     const prevFixed         = Normalisation.fixedCostsForMonth(prevYear, prevMonth);
@@ -54,7 +54,7 @@ const Dashboard = (() => {
     const normStructural    = Normalisation.structuralTransfersNormalised();
 
     _renderKPIs({ currentFixed, currentVariable, currentStructural, currentIncidental,
-                  normStructural, prevFixed, yoyFixed, normalised });
+                  normStructural, prevFixed, yoyFixed, normalised, year, month });
     _renderTrendChart();
     _renderCategoryChart(year, month);
     _renderDeviations(year, month, prevYear, prevMonth, yoyYear, yoyMonth);
@@ -63,7 +63,7 @@ const Dashboard = (() => {
   // ---- KPI cards ----
 
   function _renderKPIs({ currentFixed, currentVariable, currentStructural, currentIncidental,
-                          normStructural, prevFixed, yoyFixed, normalised }) {
+                          normStructural, prevFixed, yoyFixed, normalised, year, month }) {
     const momPct = prevFixed > 0 ? ((currentFixed - prevFixed) / prevFixed) * 100 : 0;
     const yoyPct = yoyFixed  > 0 ? ((currentFixed - yoyFixed)  / yoyFixed)  * 100 : 0;
 
@@ -99,6 +99,17 @@ const Dashboard = (() => {
         accent:    'orange',
         tooltip:   'Alle uitgaven deze maand minus de vaste lasten. Denk aan boodschappen, horeca, kleding etc.',
         detail:    null,
+        group:     'monthly',
+      },
+      {
+        icon:      'fa-solid fa-piggy-bank',
+        label:     'Sparen & beleggen',
+        value:     `€${currentStructural.toFixed(0)}`,
+        delta:     `Werkelijk overgeboekt`,
+        deltaType: '',
+        accent:    'green',
+        tooltip:   'Bedrag dat deze maand daadwerkelijk naar spaar- of beleggingsrekeningen is gegaan.',
+        detail:    'structural-actual',
         group:     'monthly',
       },
       {
@@ -387,6 +398,29 @@ const Dashboard = (() => {
           <td class="amount-debit">€${r.amount.toFixed(2)}</td>
         </tr>`).join('');
       _showDetailModal(title, cols, bodyRows, total);
+
+    } else if (type === 'structural-actual') {
+      // Actual structural transfers this month — individual transactions
+      title = 'Sparen & beleggen — transacties deze maand';
+      const cat3 = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
+      if (!cat3) { _showDetailModal(title, ['Melding'], '<tr><td>Geen categorie "Eigen rekening" gevonden.</td></tr>', 0); return; }
+      rows  = DB.query(`
+        SELECT t.date, t.description, rp.name AS post_name, t.amount
+        FROM   transactions t
+        LEFT   JOIN recurring_posts rp ON rp.id = t.post_id
+        WHERE  t.type = 'debit' AND t.category_id = ? AND t.post_id IS NOT NULL AND t.date LIKE ?
+        ORDER  BY t.amount DESC
+      `, [cat3.id, `${monthStr}%`]);
+      total = rows.reduce((s, r) => s + r.amount, 0);
+      cols  = ['Datum', 'Post', 'Omschrijving', 'Bedrag'];
+      const actRows = rows.map(r => `
+        <tr>
+          <td>${r.date}</td>
+          <td><span class="badge badge-fixed">${r.post_name || '—'}</span></td>
+          <td>${r.description.substring(0, 50)}</td>
+          <td class="amount-fixed">€${r.amount.toFixed(2)}</td>
+        </tr>`).join('');
+      _showDetailModal(title, cols, actRows, total);
 
     } else if (type === 'structural') {
       // Structural transfers: linked to a recurring post with category "Eigen rekening"
