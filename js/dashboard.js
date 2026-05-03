@@ -384,10 +384,11 @@ const Dashboard = (() => {
     if (type === 'actual') {
       title = 'Vaste lasten (werkelijk) — opbouw';
       rows  = DB.query(`
-        SELECT rp.name, c.name AS cat, t.amount, t.date
+        SELECT rp.name, c.name AS cat, t.amount, t.date, l.name AS label_name
         FROM   transactions t
         JOIN   recurring_posts rp ON rp.id = t.post_id
         LEFT   JOIN categories c  ON c.id  = rp.category_id
+        LEFT   JOIN labels     l  ON l.id  = t.label_id
         WHERE  t.type = 'debit' AND t.date LIKE ?
         AND (c.name IS NULL OR c.name != 'Beleggen')
         ORDER  BY t.amount DESC
@@ -396,7 +397,7 @@ const Dashboard = (() => {
       cols  = ['Post', 'Categorie', 'Datum', 'Bedrag'];
       const bodyRows = rows.map(r => `
         <tr>
-          <td>${r.name}</td>
+          <td>${r.label_name ? `<span class="label-pill">${r.label_name}</span>` : r.name}</td>
           <td><span class="badge">${r.cat || '—'}</span></td>
           <td>${r.date}</td>
           <td class="amount-debit">€${r.amount.toFixed(2)}</td>
