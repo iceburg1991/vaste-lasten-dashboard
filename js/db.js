@@ -166,6 +166,7 @@ const DB = (() => {
     CONFIG.DEFAULT_CATEGORIES.forEach(name => {
       db.run('INSERT OR IGNORE INTO categories (name) VALUES (?)', [name]);
     });
+    _saveToOPFS();
     _showApp();
   }
 
@@ -182,6 +183,7 @@ const DB = (() => {
       db = new SQL.Database(arr);
       db.run(SCHEMA);
       _migrate();
+      _saveToOPFS();
       _showApp();
     };
     reader.readAsArrayBuffer(file);
@@ -192,6 +194,7 @@ const DB = (() => {
     db = new SQL.Database(arr);
     db.run(SCHEMA);
     _migrate();
+    _saveToOPFS();
     _showApp();
   }
 

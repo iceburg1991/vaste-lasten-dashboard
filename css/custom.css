@@ -416,15 +416,15 @@ td { padding: 11px 16px; vertical-align: middle; }
 .actions       { display: flex; gap: 4px; }
 
 /* Transaction table columns */
-#tab-transactions table { table-layout: fixed; width: 100%; }
+#tab-transactions .table-wrap { overflow-x: auto; }
+#tab-transactions table { table-layout: fixed; width: 100%; min-width: 750px; }
 #tab-transactions td, #tab-transactions th { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#tab-transactions th:nth-child(1), #tab-transactions td:nth-child(1) { width: 95px; }
-#tab-transactions th:nth-child(2), #tab-transactions td:nth-child(2) { width: auto; }
+#tab-transactions th:nth-child(1), #tab-transactions td:nth-child(1) { width: 110px; }
+#tab-transactions th:nth-child(2), #tab-transactions td:nth-child(2) { width: 220px; }
 #tab-transactions th:nth-child(3), #tab-transactions td:nth-child(3) { width: 90px; }
 #tab-transactions th:nth-child(4), #tab-transactions td:nth-child(4) { width: 130px; }
 #tab-transactions th:nth-child(5), #tab-transactions td:nth-child(5) { width: 90px; }
-#tab-transactions th:nth-child(6), #tab-transactions td:nth-child(6) { width: 80px; }
-#tab-transactions th:nth-child(7), #tab-transactions td:nth-child(7) { width: 72px; }
+#tab-transactions th:nth-child(6), #tab-transactions td:nth-child(6) { width: 110px; }
 
 /* ============================================================
    BADGES
