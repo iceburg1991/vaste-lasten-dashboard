@@ -278,33 +278,34 @@ body { background: #f5f4f1; color: #1f2937; font-family: 'Inter', system-ui, san
 }
 
 .kpi-card {
-  background: rgba(255,255,255,0.88);
+  background: rgba(252,250,246,0.96);
   backdrop-filter: blur(8px);
   border-radius: 16px;
   padding: 20px 20px 16px;
-  border: 1px solid rgba(255,255,255,0.95);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06);
+  border: 1px solid rgba(201,168,76,0.15);
+  box-shadow: 0 2px 8px rgba(60,35,10,0.08), 0 8px 24px rgba(60,35,10,0.07);
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.25s, transform 0.25s;
   cursor: default;
 }
 .kpi-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(60,35,10,0.1), 0 16px 40px rgba(60,35,10,0.1);
   transform: translateY(-3px);
 }
 
 .kpi-card::before {
   content: '';
   position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
+  left: 0; right: 0; top: 0;
+  height: 4px;
 }
-.kpi-gold::before   { background: linear-gradient(180deg, #e8c97a 0%, #a07c30 100%); }
-.kpi-green::before  { background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); }
-.kpi-orange::before { background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%); }
-.kpi-gray::before   { background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%); }
-.kpi-red::before    { background: linear-gradient(180deg, #f87171 0%, #dc2626 100%); }
+.kpi-blue::before   { background: linear-gradient(90deg, #60a5fa, #2563eb); }
+.kpi-gold::before   { background: linear-gradient(90deg, #e8c97a, #a07c30); }
+.kpi-green::before  { background: linear-gradient(90deg, #4ade80, #16a34a); }
+.kpi-orange::before { background: linear-gradient(90deg, #fbbf24, #d97706); }
+.kpi-gray::before   { background: linear-gradient(90deg, #cbd5e1, #94a3b8); }
+.kpi-red::before    { background: linear-gradient(90deg, #f87171, #dc2626); }
 
 .kpi-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
 .kpi-icon  { font-size: 16px; color: #d4af37; margin-bottom: 10px; }
