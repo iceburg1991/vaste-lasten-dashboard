@@ -98,7 +98,7 @@ const DB = (() => {
   // Load sql.js WASM — must be called once before anything else
   async function init() {
     SQL = await initSqlJs({
-      locateFile: () => '/vaste-lasten-dashboard/lib/sql-wasm.wasm'
+      locateFile: () => 'lib/sql-wasm.wasm'
     });
   }
 

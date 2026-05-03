@@ -165,13 +165,17 @@ const Dashboard = (() => {
     const monthLabel = ym ? `${months[parseInt(m)-1]} ${y}` : 'Deze maand';
 
     document.getElementById('kpi-grid').innerHTML = `
-      <div class="kpi-row">${structural.map(kpiCard).join('')}</div>
+      <div class="card-inset">
+        <div class="kpi-row">${structural.map(kpiCard).join('')}</div>
+      </div>
       <div class="kpi-month-divider">
         <div class="kpi-month-line"></div>
         <span class="kpi-month-label">${monthLabel}</span>
         <div class="kpi-month-line"></div>
       </div>
-      <div class="kpi-row">${monthly.map(kpiCard).join('')}</div>
+      <div class="card-inset">
+        <div class="kpi-row">${monthly.map(kpiCard).join('')}</div>
+      </div>
     `;
   }
 
