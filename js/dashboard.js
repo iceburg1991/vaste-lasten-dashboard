@@ -75,7 +75,7 @@ const Dashboard = (() => {
         delta:     `MoM: ${_signedPct(momPct)}`,
         deltaType: _deltaType(momPct),
         accent:    'blue',
-        tooltip:   'Som van alle vaste posten die deze maand daadwerkelijk van je rekening zijn afgeschreven.',
+        tooltip:   'Som van alle vaste posten die deze maand daadwerkelijk van je rekening zijn afgeschreven. Vaste posten met categorie Beleggen tellen mee bij Sparen &amp; beleggen.',
         detail:    'actual',
         group:     'monthly',
       },
@@ -108,7 +108,7 @@ const Dashboard = (() => {
         delta:     `Werkelijk overgeboekt`,
         deltaType: '',
         accent:    'green',
-        tooltip:   'Bedrag dat deze maand daadwerkelijk naar spaar- of beleggingsrekeningen is gegaan.',
+        tooltip:   'Bedrag dat deze maand daadwerkelijk naar spaar- of beleggingsrekeningen is gegaan. Bevat transacties met categorie Eigen rekening én Beleggen, mits gekoppeld aan een vaste post.',
         detail:    'structural-actual',
         group:     'monthly',
       },
@@ -382,7 +382,6 @@ const Dashboard = (() => {
     let title, rows, cols, total;
 
     if (type === 'actual') {
-      // Breakdown of actual fixed costs this month
       title = 'Vaste lasten (werkelijk) — opbouw';
       rows  = DB.query(`
         SELECT rp.name, c.name AS cat, t.amount, t.date
@@ -390,6 +389,7 @@ const Dashboard = (() => {
         JOIN   recurring_posts rp ON rp.id = t.post_id
         LEFT   JOIN categories c  ON c.id  = rp.category_id
         WHERE  t.type = 'debit' AND t.date LIKE ?
+        AND (c.name IS NULL OR c.name != 'Beleggen')
         ORDER  BY t.amount DESC
       `, [`${monthStr}%`]);
       total = rows.reduce((s, r) => s + r.amount, 0);
@@ -401,51 +401,52 @@ const Dashboard = (() => {
           <td>${r.date}</td>
           <td class="amount-debit">€${r.amount.toFixed(2)}</td>
         </tr>`).join('');
-      _showDetailModal(title, cols, bodyRows, total);
+      _showDetailModal(title, cols, bodyRows, total,
+        'Debit-transacties gekoppeld aan een vaste post, <strong>exclusief</strong> categorie <em>Beleggen</em> (die telt mee bij Sparen &amp; beleggen).');
 
     } else if (type === 'structural-actual') {
-      // Actual structural transfers this month — individual transactions
       title = 'Sparen & beleggen — transacties deze maand';
-      const cat3 = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
-      if (!cat3) { _showDetailModal(title, ['Melding'], '<tr><td>Geen categorie "Eigen rekening" gevonden.</td></tr>', 0); return; }
       rows  = DB.query(`
-        SELECT t.date, t.description, rp.name AS post_name, t.amount
+        SELECT t.date, t.description, rp.name AS post_name, c.name AS cat, t.amount
         FROM   transactions t
         LEFT   JOIN recurring_posts rp ON rp.id = t.post_id
-        WHERE  t.type = 'debit' AND t.category_id = ? AND t.post_id IS NOT NULL AND t.date LIKE ?
+        LEFT   JOIN categories c       ON c.id  = t.category_id
+        WHERE  t.type = 'debit' AND t.post_id IS NOT NULL AND t.date LIKE ?
+        AND c.name IN ('Eigen rekening', 'Beleggen')
         ORDER  BY t.amount DESC
-      `, [cat3.id, `${monthStr}%`]);
+      `, [`${monthStr}%`]);
       total = rows.reduce((s, r) => s + r.amount, 0);
-      cols  = ['Datum', 'Post', 'Omschrijving', 'Bedrag'];
+      cols  = ['Datum', 'Categorie', 'Post', 'Omschrijving', 'Bedrag'];
       const actRows = rows.map(r => `
         <tr>
           <td>${r.date}</td>
+          <td><span class="badge">${r.cat || '—'}</span></td>
           <td><span class="badge badge-fixed">${r.post_name || '—'}</span></td>
           <td>${r.description.substring(0, 50)}</td>
           <td class="amount-fixed">€${r.amount.toFixed(2)}</td>
         </tr>`).join('');
-      _showDetailModal(title, cols, actRows, total);
+      _showDetailModal(title, cols, actRows, total,
+        'Debit-transacties gekoppeld aan een vaste post met categorie <em>Eigen rekening</em> of <em>Beleggen</em>.');
 
     } else if (type === 'structural') {
-      // Structural transfers: linked to a recurring post with category "Eigen rekening"
       title = 'Sparen & beleggen — opbouw';
       const freqLabel = { 12:'Maandelijks', 10:'10×/jaar', 6:'Halfjaarlijks', 4:'Per kwartaal', 2:'2×/jaar', 1:'Jaarlijks' };
-      const cat = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
-      if (!cat) { _showDetailModal(title, ['Melding'], '<tr><td>Geen categorie "Eigen rekening" gevonden.</td></tr>', 0); return; }
-      const posts = Normalisation.getPostsNormalised().filter(p => p.category_id === cat.id);
+      const posts = Normalisation.getPostsNormalised()
+        .filter(p => p.category_name === 'Eigen rekening' || p.category_name === 'Beleggen');
       total = posts.reduce((s, p) => s + p.monthly_amount, 0);
-      cols  = ['Post', 'Frequentie', 'Bedrag', '= €/maand'];
+      cols  = ['Post', 'Categorie', 'Frequentie', 'Bedrag', '= €/maand'];
       const structRows = posts.map(p => `
         <tr>
           <td>${p.name}</td>
+          <td><span class="badge">${p.category_name || '—'}</span></td>
           <td>${freqLabel[p.frequency] || p.frequency + '×'}</td>
           <td>€${p.amount.toFixed(2)}</td>
           <td class="amount-fixed">€${p.monthly_amount.toFixed(2)}</td>
         </tr>`).join('');
-      _showDetailModal(title, cols, structRows, total);
+      _showDetailModal(title, cols, structRows, total,
+        'Vaste posten met categorie <em>Eigen rekening</em> of <em>Beleggen</em>, omgerekend naar €/maand (bedrag × frequentie ÷ 12).');
 
     } else if (type === 'incidental') {
-      // Incidental transfers: category "Eigen rekening" without a recurring post link
       title = 'Incidentele overboekingen — transacties';
       const cat2 = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
       if (!cat2) { _showDetailModal(title, ['Melding'], '<tr><td>Geen categorie "Eigen rekening" gevonden.</td></tr>', 0); return; }
@@ -464,13 +465,13 @@ const Dashboard = (() => {
           <td class="text-muted small">${r.counterparty || '—'}</td>
           <td class="amount-debit">€${r.amount.toFixed(2)}</td>
         </tr>`).join('');
-      _showDetailModal(title, cols, incRows, total);
+      _showDetailModal(title, cols, incRows, total,
+        'Debit-transacties met categorie <em>Eigen rekening</em> die <strong>niet</strong> aan een vaste post gekoppeld zijn.');
 
     } else if (type === 'normalised') {
-      // Breakdown of normalised monthly amount per post
       title = 'Genormaliseerd / maand — opbouw';
       const freqLabel = { 12:'Maandelijks', 10:'10×/jaar', 6:'Halfjaarlijks', 4:'Per kwartaal', 2:'2×/jaar', 1:'Jaarlijks' };
-      const posts = Normalisation.getPostsNormalised();
+      const posts = Normalisation.getPostsNormalised().filter(p => p.category_name !== 'Beleggen');
       total = posts.reduce((s, p) => s + p.monthly_amount, 0);
       cols  = ['Post', 'Categorie', 'Bedrag', 'Frequentie', '÷12', '= €/maand'];
 
@@ -499,12 +500,16 @@ const Dashboard = (() => {
             <td class="amount-fixed">€${p.monthly_amount.toFixed(2)}</td>
           </tr>`;
       }).join('');
-      _showDetailModal(title, cols, bodyRows, total);
+      _showDetailModal(title, cols, bodyRows, total,
+        'Alle vaste posten <strong>exclusief</strong> categorie <em>Beleggen</em> (die telt mee bij Sparen &amp; beleggen), omgerekend naar €/maand (bedrag × frequentie ÷ 12).');
     }
   }
 
-  function _showDetailModal(title, cols, bodyRows, total) {
+  function _showDetailModal(title, cols, bodyRows, total, criteria = '') {
     document.getElementById('detail-modal-title').textContent = title;
+    const el = document.getElementById('detail-modal-criteria');
+    el.innerHTML = criteria ? `<i class="fa-solid fa-circle-info"></i> ${criteria}` : '';
+    el.style.display = criteria ? 'block' : 'none';
     document.getElementById('detail-modal-thead').innerHTML =
       cols.map(c => `<th>${c}</th>`).join('');
     document.getElementById('detail-modal-tbody').innerHTML = bodyRows;

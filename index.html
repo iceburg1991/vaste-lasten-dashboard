@@ -467,6 +467,17 @@
   </div>
 </div>
 
+<!-- Transaction detail modal -->
+<div class="modal-overlay" id="modal-trans-detail">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Transactiedetails</div>
+    <dl id="trans-detail-body" class="trans-detail-list"></dl>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="UI.closeModal('modal-trans-detail')">Sluiten</button>
+    </div>
+  </div>
+</div>
+
 <!-- Edit transaction modal -->
 <div class="modal-overlay" id="modal-edit-transaction">
   <div class="modal" style="max-width:440px;">
@@ -502,6 +513,7 @@
 <div class="modal-overlay" id="modal-detail">
   <div class="modal" style="max-width:900px;width:95vw;">
     <div class="modal-title" id="detail-modal-title"></div>
+    <div id="detail-modal-criteria" class="alert alert-info" style="display:none;margin-bottom:12px;font-size:13px;"></div>
     <div class="table-wrap" style="margin-bottom:12px;">
       <table>
         <thead><tr id="detail-modal-thead"></tr></thead>
@@ -526,11 +538,11 @@
     </div>
 
     <!-- Tabs -->
-    <div class="tabs" style="margin-bottom:16px;">
-      <button class="tab-btn active" id="link-tab-existing" onclick="Transactions._switchLinkTab('existing')">
+    <div class="modal-tab-strip">
+      <button class="modal-tab-btn active" id="link-tab-existing" onclick="Transactions._switchLinkTab('existing')">
         Koppelen aan bestaande post
       </button>
-      <button class="tab-btn" id="link-tab-new" onclick="Transactions._switchLinkTab('new')">
+      <button class="modal-tab-btn" id="link-tab-new" onclick="Transactions._switchLinkTab('new')">
         Nieuwe vaste post aanmaken
       </button>
     </div>

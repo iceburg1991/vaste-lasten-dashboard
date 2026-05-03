@@ -33,9 +33,11 @@ const Normalisation = (() => {
     }));
   }
 
-  // Total normalised fixed costs per month (sum of all recurring posts)
+  // Total normalised fixed costs per month — excludes "Beleggen" (counted under savings)
   function totalNormalisedPerMonth() {
-    return getPostsNormalised().reduce((sum, p) => sum + p.monthly_amount, 0);
+    return getPostsNormalised()
+      .filter(p => p.category_name !== 'Beleggen')
+      .reduce((sum, p) => sum + p.monthly_amount, 0);
   }
 
   // Total actual spending in a given month (all debit transactions)
@@ -49,14 +51,16 @@ const Normalisation = (() => {
     return rows[0]?.total || 0;
   }
 
-  // Total fixed costs actually paid in a given month
-  // (only transactions matched to a recurring post)
+  // Total fixed costs actually paid in a given month — excludes "Beleggen" (counted under savings)
   function fixedCostsForMonth(year, month) {
     const monthStr = _monthStr(year, month);
     const rows     = DB.query(
       `SELECT SUM(t.amount) AS total
        FROM   transactions t
-       WHERE  t.type = 'debit' AND t.post_id IS NOT NULL AND t.date LIKE ?`,
+       WHERE  t.type = 'debit' AND t.post_id IS NOT NULL AND t.date LIKE ?
+       AND NOT EXISTS (
+         SELECT 1 FROM categories c WHERE c.id = t.category_id AND c.name = 'Beleggen'
+       )`,
       [`${monthStr}%`]
     );
     return rows[0]?.total || 0;
@@ -78,27 +82,26 @@ const Normalisation = (() => {
     return `${year}-${String(month).padStart(2, '0')}`;
   }
 
-  // Structural internal transfers: transactions with category "Eigen rekening"
-  // that are linked to a recurring post (fixed, monthly saving/investing)
+  // Structural transfers: vaste-post-linked debits with category "Eigen rekening" or "Beleggen"
   function structuralTransfersForMonth(year, month) {
     const monthStr = _monthStr(year, month);
-    const cat      = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
-    if (!cat) return 0;
     const rows = DB.query(
       `SELECT SUM(t.amount) AS total FROM transactions t
-       WHERE  t.type = 'debit' AND t.category_id = ? AND t.post_id IS NOT NULL AND t.date LIKE ?`,
-      [cat.id, `${monthStr}%`]
+       WHERE  t.type = 'debit' AND t.post_id IS NOT NULL AND t.date LIKE ?
+       AND EXISTS (
+         SELECT 1 FROM categories c WHERE c.id = t.category_id AND c.name IN ('Eigen rekening', 'Beleggen')
+       )`,
+      [`${monthStr}%`]
     );
     return rows[0]?.total || 0;
   }
 
-  // Normalised monthly amount for structural transfers (via recurring posts)
+  // Normalised monthly amount for structural transfers — posts with "Eigen rekening" or "Beleggen"
   function structuralTransfersNormalised() {
-    const cat = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
-    if (!cat) return 0;
     const posts = DB.query(
-      'SELECT amount, frequency FROM recurring_posts WHERE category_id = ?',
-      [cat.id]
+      `SELECT rp.amount, rp.frequency FROM recurring_posts rp
+       JOIN categories c ON c.id = rp.category_id
+       WHERE c.name IN ('Eigen rekening', 'Beleggen')`
     );
     return posts.reduce((sum, p) => sum + (p.amount * p.frequency) / 12, 0);
   }

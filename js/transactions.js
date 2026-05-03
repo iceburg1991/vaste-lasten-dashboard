@@ -66,6 +66,7 @@ const Transactions = (() => {
           <td><span class="badge">${r.cat_name || '—'}</span></td>
           <td>${typeLabel}</td>
           <td style="white-space:nowrap;">
+            <button class="btn btn-sm" title="Details" onclick="Transactions.openDetailModal(${r.id})"><i class="fa-solid fa-eye"></i></button>
             <button class="btn btn-sm" title="Bewerken" onclick="Transactions.openEditModal(${r.id})"><i class="fa-solid fa-pen"></i></button>
             ${pinBtn}
           </td>
@@ -166,8 +167,8 @@ const Transactions = (() => {
   function _switchLinkTab(tab) {
     document.getElementById('link-tab-existing').classList.toggle('active', tab === 'existing');
     document.getElementById('link-tab-new').classList.toggle('active', tab === 'new');
-    document.getElementById('link-panel-existing').style.display = tab === 'existing' ? 'block' : 'none';
-    document.getElementById('link-panel-new').style.display      = tab === 'new'      ? 'block' : 'none';
+    document.getElementById('link-panel-existing').style.display = tab === 'existing' ? '' : 'none';
+    document.getElementById('link-panel-new').style.display      = tab === 'new'      ? '' : 'none';
   }
 
   function confirmLinkExisting() {
@@ -213,9 +214,41 @@ const Transactions = (() => {
     DB.save(true);
   }
 
+  // ---- Detail modal: all stored fields ----
+
+  function openDetailModal(transId) {
+    const t = DB.query(`
+      SELECT t.*, c.name AS cat_name, rp.name AS post_name, l.name AS label_name
+      FROM   transactions t
+      LEFT   JOIN categories     c  ON c.id  = t.category_id
+      LEFT   JOIN recurring_posts rp ON rp.id = t.post_id
+      LEFT   JOIN labels          l  ON l.id  = t.label_id
+      WHERE  t.id = ?
+    `, [transId])[0];
+    if (!t) return;
+
+    const row = (label, value) =>
+      `<dt>${label}</dt><dd>${value !== null && value !== '' && value !== undefined ? value : '<span class="text-muted">—</span>'}</dd>`;
+
+    document.getElementById('trans-detail-body').innerHTML = [
+      row('Datum',          t.date),
+      row('Volgnummer',     t.sequence_nr),
+      row('Omschrijving',   t.description),
+      row('Tegenrekening',  t.counterparty),
+      row('Bedrag',         `<span class="${t.type === 'credit' ? 'amount-credit' : 'amount-debit'}">€${t.amount.toFixed(2)}</span>`),
+      row('Type',           t.type === 'credit' ? 'Inkomst (credit)' : 'Uitgave (debit)'),
+      row('Categorie',      t.cat_name  ? `<span class="badge">${t.cat_name}</span>`  : null),
+      row('Vaste post',     t.post_name ? `<span class="badge badge-fixed"><i class="fa-solid fa-thumbtack"></i> ${t.post_name}</span>` : null),
+      row('Label',          t.label_name ? `<span class="label-pill">${t.label_name}</span>` : null),
+    ].join('');
+
+    UI.openModal('modal-trans-detail');
+  }
+
   return {
     populateMonthSelector, render,
     openEditModal, saveEdit,
+    openDetailModal,
     openLinkModal, confirmLinkExisting, confirmLinkNew, unlink, _switchLinkTab,
   };
 })();
