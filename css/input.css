@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./card-inset.css";
 
 @theme {
   --font-family-sans: 'Inter', system-ui, sans-serif;
