@@ -273,10 +273,8 @@ body { background: #f5f4f1; color: #1f2937; font-family: 'Inter', system-ui, san
    KPI CARDS
    ============================================================ */
 .kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
+  display: block;
+  margin-bottom: 0;
 }
 
 .kpi-card {
@@ -609,7 +607,7 @@ td { padding: 11px 16px; vertical-align: middle; }
 }
 
 /* ---- KPI two-row layout ---- */
-.kpi-grid { margin-bottom: 0; }
+
 
 .kpi-row {
   display: grid;
