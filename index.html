@@ -98,6 +98,60 @@
         <span class="topbar-logo-text">Vaste<em>Lasten</em></span>
       </div>
 
+      <!-- Navigation tabs — center -->
+      <div class="tabs">
+              <button class="tab-btn active" data-tab="dashboard" onclick="UI.switchTab('dashboard')">
+                  <div class="tab-spotlight"></div>
+                  <div class="tab-glow"></div>
+                  <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span>Dashboard</span>
+              </button>
+              <div class="tab-sep"></div>
+              <button class="tab-btn" data-tab="posts" onclick="UI.switchTab('posts')">
+                  <div class="tab-spotlight"></div>
+                  <div class="tab-glow"></div>
+                  <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                    <circle cx="3" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+                    <circle cx="3" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+                    <circle cx="3" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <span>Vaste Posten</span>
+              </button>
+              <div class="tab-sep"></div>
+              <button class="tab-btn" data-tab="transactions" onclick="UI.switchTab('transactions')">
+                  <div class="tab-spotlight"></div>
+                  <div class="tab-glow"></div>
+                  <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 2h16v20l-2-1-2 1-2-1-2 1-2-1-2 1V2z"/>
+                    <line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/>
+                  </svg>
+                  <span>Transacties</span>
+              </button>
+              <div class="tab-sep"></div>
+              <button class="tab-btn" data-tab="labels" onclick="UI.switchTab('labels')">
+                  <div class="tab-spotlight"></div>
+                  <div class="tab-glow"></div>
+                  <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                    <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/>
+                  </svg>
+                  <span>Labels</span>
+              </button>
+              <div class="tab-sep"></div>
+              <button class="tab-btn" data-tab="settings" onclick="UI.switchTab('settings')">
+                  <div class="tab-spotlight"></div>
+                  <div class="tab-glow"></div>
+                  <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+                  </svg>
+                  <span>Instellingen</span>
+              </button>
+            </div>
+
       <!-- Right actions -->
       <div class="topbar-actions">
         <span id="drive-status" class="drive-status">
@@ -115,60 +169,6 @@
 
   <!-- Main content -->
   <div class="main">
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="dashboard" onclick="UI.switchTab('dashboard')">
-        <div class="tab-spotlight"></div>
-        <div class="tab-glow"></div>
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <span>Dashboard</span>
-      </button>
-      <div class="tab-sep"></div>
-      <button class="tab-btn" data-tab="posts" onclick="UI.switchTab('posts')">
-        <div class="tab-spotlight"></div>
-        <div class="tab-glow"></div>
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-          <circle cx="3" cy="6" r="1.2" fill="currentColor" stroke="none"/>
-          <circle cx="3" cy="12" r="1.2" fill="currentColor" stroke="none"/>
-          <circle cx="3" cy="18" r="1.2" fill="currentColor" stroke="none"/>
-        </svg>
-        <span>Vaste Posten</span>
-      </button>
-      <div class="tab-sep"></div>
-      <button class="tab-btn" data-tab="transactions" onclick="UI.switchTab('transactions')">
-        <div class="tab-spotlight"></div>
-        <div class="tab-glow"></div>
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M4 2h16v20l-2-1-2 1-2-1-2 1-2-1-2 1V2z"/>
-          <line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/>
-        </svg>
-        <span>Transacties</span>
-      </button>
-      <div class="tab-sep"></div>
-      <button class="tab-btn" data-tab="labels" onclick="UI.switchTab('labels')">
-        <div class="tab-spotlight"></div>
-        <div class="tab-glow"></div>
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-          <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/>
-        </svg>
-        <span>Labels</span>
-      </button>
-      <div class="tab-sep"></div>
-      <button class="tab-btn" data-tab="settings" onclick="UI.switchTab('settings')">
-        <div class="tab-spotlight"></div>
-        <div class="tab-glow"></div>
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-        </svg>
-        <span>Instellingen</span>
-      </button>
-    </div>
 
     <!-- ---- TAB: DASHBOARD ---- -->
     <div id="tab-dashboard" class="tab-content active">
