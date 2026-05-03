@@ -59,7 +59,7 @@ const Normalisation = (() => {
        FROM   transactions t
        WHERE  t.type = 'debit' AND t.post_id IS NOT NULL AND t.date LIKE ?
        AND NOT EXISTS (
-         SELECT 1 FROM categories c WHERE c.id = t.category_id AND c.name = 'Beleggen'
+         SELECT 1 FROM categories c WHERE c.id = t.category_id AND c.name IN ('Beleggen', 'Eigen rekening')
        )`,
       [`${monthStr}%`]
     );

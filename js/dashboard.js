@@ -75,7 +75,7 @@ const Dashboard = (() => {
         delta:     `MoM: ${_signedPct(momPct)}`,
         deltaType: _deltaType(momPct),
         accent:    'blue',
-        tooltip:   'Som van alle vaste posten die deze maand daadwerkelijk van je rekening zijn afgeschreven. Vaste posten met categorie Beleggen tellen mee bij Sparen &amp; beleggen.',
+        tooltip:   'Som van alle vaste posten die deze maand daadwerkelijk van je rekening zijn afgeschreven. Vaste posten met categorie Beleggen of Eigen rekening tellen mee bij Sparen &amp; beleggen.',
         detail:    'actual',
         group:     'monthly',
       },
@@ -390,7 +390,7 @@ const Dashboard = (() => {
         LEFT   JOIN categories c  ON c.id  = rp.category_id
         LEFT   JOIN labels     l  ON l.id  = t.label_id
         WHERE  t.type = 'debit' AND t.date LIKE ?
-        AND (c.name IS NULL OR c.name != 'Beleggen')
+        AND (c.name IS NULL OR c.name NOT IN ('Beleggen', 'Eigen rekening'))
         ORDER  BY t.amount DESC
       `, [`${monthStr}%`]);
       total = rows.reduce((s, r) => s + r.amount, 0);
@@ -403,7 +403,7 @@ const Dashboard = (() => {
           <td class="amount-debit">€${r.amount.toFixed(2)}</td>
         </tr>`).join('');
       _showDetailModal(title, cols, bodyRows, total,
-        'Debit-transacties gekoppeld aan een vaste post, <strong>exclusief</strong> categorie <em>Beleggen</em> (die telt mee bij Sparen &amp; beleggen).');
+        'Debit-transacties gekoppeld aan een vaste post, <strong>exclusief</strong> categorieën <em>Beleggen</em> en <em>Eigen rekening</em> (die tellen mee bij Sparen &amp; beleggen).');
 
     } else if (type === 'structural-actual') {
       title = 'Sparen & beleggen — transacties deze maand';
