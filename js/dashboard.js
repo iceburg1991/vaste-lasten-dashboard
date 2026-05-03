@@ -101,7 +101,7 @@ const Dashboard = (() => {
         deltaType: '',
         accent:    'gray',
         tooltip:   'Bedrag overgeboekt naar eigen rekeningen deze maand. Telt niet mee als uitgave.',
-        detail:    null,
+        detail:    'internal',
       },
       {
         icon:      'fa-solid fa-chart-line',
@@ -355,6 +355,28 @@ const Dashboard = (() => {
           <td>${r.name}</td>
           <td><span class="badge">${r.cat || '—'}</span></td>
           <td>${r.date}</td>
+          <td class="amount-debit">€${r.amount.toFixed(2)}</td>
+        </tr>`).join('');
+      _showDetailModal(title, cols, bodyRows, total);
+
+    } else if (type === 'internal') {
+      // All transactions this month with category "Eigen rekening"
+      title = 'Interne overboekingen — transacties';
+      const cat = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
+      if (!cat) { _showDetailModal(title, ['Melding'], '<tr><td>Geen categorie "Eigen rekening" gevonden.</td></tr>', 0); return; }
+      rows  = DB.query(`
+        SELECT t.date, t.description, t.counterparty, t.amount
+        FROM   transactions t
+        WHERE  t.category_id = ? AND t.date LIKE ?
+        ORDER  BY t.date DESC
+      `, [cat.id, `${monthStr}%`]);
+      total = rows.reduce((s, r) => s + r.amount, 0);
+      cols  = ['Datum', 'Omschrijving', 'Tegenrekening', 'Bedrag'];
+      const bodyRows = rows.map(r => `
+        <tr>
+          <td>${r.date}</td>
+          <td>${r.description.substring(0, 50)}</td>
+          <td class="text-muted small">${r.counterparty || '—'}</td>
           <td class="amount-debit">€${r.amount.toFixed(2)}</td>
         </tr>`).join('');
       _showDetailModal(title, cols, bodyRows, total);
