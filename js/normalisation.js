@@ -78,17 +78,47 @@ const Normalisation = (() => {
     return `${year}-${String(month).padStart(2, '0')}`;
   }
 
-  // Total of internal transfers (category "Eigen rekening") for a given month
-  function internalTransfersForMonth(year, month) {
+  // Structural internal transfers: transactions with category "Eigen rekening"
+  // that are linked to a recurring post (fixed, monthly saving/investing)
+  function structuralTransfersForMonth(year, month) {
     const monthStr = _monthStr(year, month);
     const cat      = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
     if (!cat) return 0;
     const rows = DB.query(
-      `SELECT SUM(amount) AS total FROM transactions
-       WHERE type = 'debit' AND category_id = ? AND date LIKE ?`,
+      `SELECT SUM(t.amount) AS total FROM transactions t
+       WHERE  t.type = 'debit' AND t.category_id = ? AND t.post_id IS NOT NULL AND t.date LIKE ?`,
       [cat.id, `${monthStr}%`]
     );
     return rows[0]?.total || 0;
+  }
+
+  // Normalised monthly amount for structural transfers (via recurring posts)
+  function structuralTransfersNormalised() {
+    const cat = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
+    if (!cat) return 0;
+    const posts = DB.query(
+      'SELECT amount, frequency FROM recurring_posts WHERE category_id = ?',
+      [cat.id]
+    );
+    return posts.reduce((sum, p) => sum + (p.amount * p.frequency) / 12, 0);
+  }
+
+  // Incidental internal transfers: category "Eigen rekening" but NOT linked to a recurring post
+  function incidentalTransfersForMonth(year, month) {
+    const monthStr = _monthStr(year, month);
+    const cat      = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
+    if (!cat) return 0;
+    const rows = DB.query(
+      `SELECT SUM(t.amount) AS total FROM transactions t
+       WHERE  t.type = 'debit' AND t.category_id = ? AND t.post_id IS NULL AND t.date LIKE ?`,
+      [cat.id, `${monthStr}%`]
+    );
+    return rows[0]?.total || 0;
+  }
+
+  // Total of all internal transfers (structural + incidental) for a given month
+  function internalTransfersForMonth(year, month) {
+    return structuralTransfersForMonth(year, month) + incidentalTransfersForMonth(year, month);
   }
 
   return {
@@ -98,6 +128,9 @@ const Normalisation = (() => {
     actualSpendingForMonth,
     fixedCostsForMonth,
     postAmountForMonth,
+    structuralTransfersForMonth,
+    structuralTransfersNormalised,
+    incidentalTransfersForMonth,
     internalTransfersForMonth,
   };
 })();

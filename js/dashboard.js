@@ -43,14 +43,18 @@ const Dashboard = (() => {
     const yoyYear  = year - 1;
     const yoyMonth = month;
 
-    const currentFixed    = Normalisation.fixedCostsForMonth(year, month);
-    const currentInternal = Normalisation.internalTransfersForMonth(year, month);
-    const currentVariable = Normalisation.actualSpendingForMonth(year, month) - currentFixed - currentInternal;
-    const prevFixed       = Normalisation.fixedCostsForMonth(prevYear, prevMonth);
-    const yoyFixed        = Normalisation.fixedCostsForMonth(yoyYear, yoyMonth);
-    const normalised      = Normalisation.totalNormalisedPerMonth();
+    const currentFixed      = Normalisation.fixedCostsForMonth(year, month);
+    const currentStructural = Normalisation.structuralTransfersForMonth(year, month);
+    const currentIncidental = Normalisation.incidentalTransfersForMonth(year, month);
+    const currentInternal   = currentStructural + currentIncidental;
+    const currentVariable   = Normalisation.actualSpendingForMonth(year, month) - currentFixed - currentInternal;
+    const prevFixed         = Normalisation.fixedCostsForMonth(prevYear, prevMonth);
+    const yoyFixed          = Normalisation.fixedCostsForMonth(yoyYear, yoyMonth);
+    const normalised        = Normalisation.totalNormalisedPerMonth();
+    const normStructural    = Normalisation.structuralTransfersNormalised();
 
-    _renderKPIs({ currentFixed, currentVariable, currentInternal, prevFixed, yoyFixed, normalised });
+    _renderKPIs({ currentFixed, currentVariable, currentStructural, currentIncidental,
+                  normStructural, prevFixed, yoyFixed, normalised });
     _renderTrendChart();
     _renderCategoryChart(year, month);
     _renderDeviations(year, month, prevYear, prevMonth, yoyYear, yoyMonth);
@@ -58,7 +62,8 @@ const Dashboard = (() => {
 
   // ---- KPI cards ----
 
-  function _renderKPIs({ currentFixed, currentVariable, currentInternal, prevFixed, yoyFixed, normalised }) {
+  function _renderKPIs({ currentFixed, currentVariable, currentStructural, currentIncidental,
+                          normStructural, prevFixed, yoyFixed, normalised }) {
     const momPct = prevFixed > 0 ? ((currentFixed - prevFixed) / prevFixed) * 100 : 0;
     const yoyPct = yoyFixed  > 0 ? ((currentFixed - yoyFixed)  / yoyFixed)  * 100 : 0;
 
@@ -94,14 +99,24 @@ const Dashboard = (() => {
         detail:    null,
       },
       {
+        icon:      'fa-solid fa-piggy-bank',
+        label:     'Sparen & beleggen',
+        value:     `€${normStructural.toFixed(0)}`,
+        delta:     `Werkelijk: €${currentStructural.toFixed(0)} deze maand`,
+        deltaType: '',
+        accent:    'green',
+        tooltip:   'Vaste maandelijkse overboekingen naar eigen spaar- of beleggingsrekeningen, genormaliseerd naar €/maand.',
+        detail:    'structural',
+      },
+      {
         icon:      'fa-solid fa-right-left',
-        label:     'Interne overboekingen',
-        value:     `€${currentInternal.toFixed(0)}`,
-        delta:     'Overboekingen naar eigen rekeningen',
+        label:     'Incidentele overboekingen',
+        value:     `€${currentIncidental.toFixed(0)}`,
+        delta:     'Niet-structurele interne overboekingen',
         deltaType: '',
         accent:    'gray',
-        tooltip:   'Bedrag overgeboekt naar eigen rekeningen deze maand. Telt niet mee als uitgave.',
-        detail:    'internal',
+        tooltip:   'Eenmalige of onregelmatige overboekingen naar eigen rekeningen. Telt niet mee als uitgave.',
+        detail:    'incidental',
       },
       {
         icon:      'fa-solid fa-chart-line',
@@ -359,27 +374,45 @@ const Dashboard = (() => {
         </tr>`).join('');
       _showDetailModal(title, cols, bodyRows, total);
 
-    } else if (type === 'internal') {
-      // All transactions this month with category "Eigen rekening"
-      title = 'Interne overboekingen — transacties';
+    } else if (type === 'structural') {
+      // Structural transfers: linked to a recurring post with category "Eigen rekening"
+      title = 'Sparen & beleggen — opbouw';
+      const freqLabel = { 12:'Maandelijks', 10:'10×/jaar', 6:'Halfjaarlijks', 4:'Per kwartaal', 2:'2×/jaar', 1:'Jaarlijks' };
       const cat = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
       if (!cat) { _showDetailModal(title, ['Melding'], '<tr><td>Geen categorie "Eigen rekening" gevonden.</td></tr>', 0); return; }
+      const posts = Normalisation.getPostsNormalised().filter(p => p.category_id === cat.id);
+      total = posts.reduce((s, p) => s + p.monthly_amount, 0);
+      cols  = ['Post', 'Frequentie', 'Bedrag', '= €/maand'];
+      const structRows = posts.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td>${freqLabel[p.frequency] || p.frequency + '×'}</td>
+          <td>€${p.amount.toFixed(2)}</td>
+          <td class="amount-fixed">€${p.monthly_amount.toFixed(2)}</td>
+        </tr>`).join('');
+      _showDetailModal(title, cols, structRows, total);
+
+    } else if (type === 'incidental') {
+      // Incidental transfers: category "Eigen rekening" without a recurring post link
+      title = 'Incidentele overboekingen — transacties';
+      const cat2 = DB.query("SELECT id FROM categories WHERE name = 'Eigen rekening'")[0];
+      if (!cat2) { _showDetailModal(title, ['Melding'], '<tr><td>Geen categorie "Eigen rekening" gevonden.</td></tr>', 0); return; }
       rows  = DB.query(`
         SELECT t.date, t.description, t.counterparty, t.amount
         FROM   transactions t
-        WHERE  t.category_id = ? AND t.date LIKE ?
+        WHERE  t.type = 'debit' AND t.category_id = ? AND t.post_id IS NULL AND t.date LIKE ?
         ORDER  BY t.date DESC
-      `, [cat.id, `${monthStr}%`]);
+      `, [cat2.id, `${monthStr}%`]);
       total = rows.reduce((s, r) => s + r.amount, 0);
       cols  = ['Datum', 'Omschrijving', 'Tegenrekening', 'Bedrag'];
-      const bodyRows = rows.map(r => `
+      const incRows = rows.map(r => `
         <tr>
           <td>${r.date}</td>
           <td>${r.description.substring(0, 50)}</td>
           <td class="text-muted small">${r.counterparty || '—'}</td>
           <td class="amount-debit">€${r.amount.toFixed(2)}</td>
         </tr>`).join('');
-      _showDetailModal(title, cols, bodyRows, total);
+      _showDetailModal(title, cols, incRows, total);
 
     } else if (type === 'normalised') {
       // Breakdown of normalised monthly amount per post
