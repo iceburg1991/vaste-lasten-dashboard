@@ -609,7 +609,7 @@ td { padding: 11px 16px; vertical-align: middle; }
 }
 
 /* ---- KPI two-row layout ---- */
-.kpi-grid { display: block; margin-bottom: 20px; }
+.kpi-grid { margin-bottom: 0; }
 
 .kpi-row {
   display: grid;
