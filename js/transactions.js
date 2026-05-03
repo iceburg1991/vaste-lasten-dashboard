@@ -45,15 +45,8 @@ const Transactions = (() => {
 
       // Pin/unpin button for all transactions
       const pinBtn = r.post_id
-        ? `<button class="btn btn-sm btn-danger" title="Koppeling vaste last verwijderen"
-             onclick="Transactions.unlink(${r.id})">
-             <i class="fa-solid fa-link-slash"></i>
-           </button>`
-        : `<button class="btn btn-sm" title="Markeren als vaste last"
-             onclick="Transactions.openLinkModal(${r.id}, ${r.amount}, '${(r.counterparty||'')}')"
-             data-desc="${r.description.replace(/"/g, '&quot;').substring(0,60)}">
-             <i class="fa-solid fa-thumbtack"></i>
-           </button>`;
+        ? `<button class="btn btn-sm btn-danger" title="Koppeling vaste last verwijderen" onclick="Transactions.unlink(${r.id})"><i class="fa-solid fa-link-slash"></i></button>`
+        : `<button class="btn btn-sm" title="Markeren als vaste last" onclick="Transactions.openLinkModal(${r.id}, ${r.amount}, '${(r.counterparty||'')}')" data-desc="${r.description.replace(/"/g, '&quot;').substring(0,60)}"><i class="fa-solid fa-thumbtack"></i></button>`;
 
       return `
         <tr>
@@ -72,10 +65,8 @@ const Transactions = (() => {
           </td>
           <td><span class="badge">${r.cat_name || '—'}</span></td>
           <td>${typeLabel}</td>
-          <td>
-            <button class="btn btn-sm" title="Bewerken" onclick="Transactions.openEditModal(${r.id})">
-              <i class="fa-solid fa-pen"></i>
-            </button>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-sm" title="Bewerken" onclick="Transactions.openEditModal(${r.id})"><i class="fa-solid fa-pen"></i></button>
             ${pinBtn}
           </td>
         </tr>
