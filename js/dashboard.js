@@ -77,6 +77,7 @@ const Dashboard = (() => {
         accent:    'blue',
         tooltip:   'Som van alle vaste posten die deze maand daadwerkelijk van je rekening zijn afgeschreven.',
         detail:    'actual',
+        group:     'monthly',
       },
       {
         icon:      'fa-solid fa-calculator',
@@ -87,6 +88,7 @@ const Dashboard = (() => {
         accent:    'green',
         tooltip:   'Alle vaste posten omgerekend naar een maandbedrag. Bijv. een jaarlijkse verzekering van €240 telt als €20/maand. Dit is wat je structureel kwijt bent, ongeacht wanneer je betaalt.',
         detail:    'normalised',
+        group:     'structural',
       },
       {
         icon:      'fa-solid fa-cart-shopping',
@@ -97,6 +99,7 @@ const Dashboard = (() => {
         accent:    'orange',
         tooltip:   'Alle uitgaven deze maand minus de vaste lasten. Denk aan boodschappen, horeca, kleding etc.',
         detail:    null,
+        group:     'monthly',
       },
       {
         icon:      'fa-solid fa-piggy-bank',
@@ -107,6 +110,7 @@ const Dashboard = (() => {
         accent:    'green',
         tooltip:   'Vaste maandelijkse overboekingen naar eigen spaar- of beleggingsrekeningen, genormaliseerd naar €/maand.',
         detail:    'structural',
+        group:     'structural',
       },
       {
         icon:      'fa-solid fa-right-left',
@@ -117,20 +121,13 @@ const Dashboard = (() => {
         accent:    'gray',
         tooltip:   'Eenmalige of onregelmatige overboekingen naar eigen rekeningen. Telt niet mee als uitgave.',
         detail:    'incidental',
+        group:     'monthly',
       },
-      {
-        icon:      'fa-solid fa-chart-line',
-        label:     'Jaar-op-jaar',
-        value:     _signedPct(yoyPct),
-        delta:     yoyFixed > 0 ? `vs €${yoyFixed.toFixed(0)} vorig jaar` : 'Geen data van vorig jaar',
-        deltaType: _deltaType(yoyPct),
-        accent:    yoyPct > CONFIG.DEVIATION_THRESHOLD * 100 ? 'red' : 'green',
-        tooltip:   'Vergelijking van je vaste lasten deze maand ten opzichte van dezelfde maand vorig jaar.',
-        detail:    null,
-      },
+
     ];
 
-    document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    // Split KPIs into structural (top) and monthly (bottom)
+    const kpiCard = k => `
       <div class="kpi-card kpi-${k.accent}">
         <div class="kpi-card-header">
           <div class="kpi-icon"><i class="${k.icon}"></i></div>
@@ -146,8 +143,25 @@ const Dashboard = (() => {
           <button class="kpi-detail-btn" onclick="Dashboard.openDetail('${k.detail}')">
             <i class="fa-solid fa-table-list"></i> Hoe is dit berekend?
           </button>` : ''}
+      </div>`;
+
+    const structural = kpis.filter(k => k.group === 'structural');
+    const monthly    = kpis.filter(k => k.group === 'monthly');
+
+    const ym     = document.getElementById('month-select')?.value || '';
+    const months = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+    const [y, m] = ym.split('-');
+    const monthLabel = ym ? `${months[parseInt(m)-1]} ${y}` : 'Deze maand';
+
+    document.getElementById('kpi-grid').innerHTML = `
+      <div class="kpi-row">${structural.map(kpiCard).join('')}</div>
+      <div class="kpi-month-divider">
+        <div class="kpi-month-line"></div>
+        <span class="kpi-month-label">${monthLabel}</span>
+        <div class="kpi-month-line"></div>
       </div>
-    `).join('');
+      <div class="kpi-row">${monthly.map(kpiCard).join('')}</div>
+    `;
   }
 
   // ---- Trend chart (bar + normalised line) ----

@@ -628,3 +628,32 @@ td { padding: 11px 16px; vertical-align: middle; }
   .topbar      { padding: 0 16px; }
   .kpi-value   { font-size: 22px; }
 }
+
+/* ---- KPI two-row layout ---- */
+.kpi-grid { display: block; margin-bottom: 20px; }
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.kpi-month-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 14px;
+}
+.kpi-month-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(160,124,48,0.3), transparent);
+}
+.kpi-month-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a07c30;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
