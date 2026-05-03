@@ -67,7 +67,7 @@ const Dashboard = (() => {
         value:     `€${currentFixed.toFixed(0)}`,
         delta:     `MoM: ${_signedPct(momPct)}`,
         deltaType: _deltaType(momPct),
-        accent:    'blue',
+        accent:    _deviationAccent(currentFixed, normalised, true),
         tooltip:   'Som van alle vaste posten die deze maand daadwerkelijk van je rekening zijn afgeschreven. Vaste posten met categorie Beleggen of Eigen rekening tellen mee bij Sparen &amp; beleggen.',
         detail:    'actual',
         group:     'monthly',
@@ -78,7 +78,7 @@ const Dashboard = (() => {
         value:     `€${normalised.toFixed(0)}`,
         delta:     'Wat je maandelijks zou moeten reserveren',
         deltaType: '',
-        accent:    'green',
+        accent:    'blue',
         tooltip:   'Alle vaste posten omgerekend naar een maandbedrag. Bijv. een jaarlijkse verzekering van €240 telt als €20/maand. Dit is wat je structureel kwijt bent, ongeacht wanneer je betaalt.',
         detail:    'normalised',
         group:     'structural',
@@ -89,7 +89,7 @@ const Dashboard = (() => {
         value:     `€${Math.max(0, currentVariable).toFixed(0)}`,
         delta:     'Niet-vaste uitgaven deze maand',
         deltaType: '',
-        accent:    'orange',
+        accent:    'blue',
         tooltip:   'Alle uitgaven deze maand minus de vaste lasten. Denk aan boodschappen, horeca, kleding etc.',
         detail:    null,
         group:     'monthly',
@@ -100,7 +100,7 @@ const Dashboard = (() => {
         value:     `€${currentStructural.toFixed(0)}`,
         delta:     `Werkelijk overgeboekt`,
         deltaType: '',
-        accent:    'green',
+        accent:    _deviationAccent(currentStructural, normStructural, false),
         tooltip:   'Bedrag dat deze maand daadwerkelijk naar spaar- of beleggingsrekeningen is gegaan. Bevat transacties met categorie Eigen rekening én Beleggen, mits gekoppeld aan een vaste post.',
         detail:    'structural-actual',
         group:     'monthly',
@@ -111,7 +111,7 @@ const Dashboard = (() => {
         value:     `€${normStructural.toFixed(0)}`,
         delta:     `Werkelijk: €${currentStructural.toFixed(0)} deze maand`,
         deltaType: '',
-        accent:    'green',
+        accent:    'blue',
         tooltip:   'Vaste maandelijkse overboekingen naar eigen spaar- of beleggingsrekeningen, genormaliseerd naar €/maand.',
         detail:    'structural',
         group:     'structural',
@@ -122,7 +122,7 @@ const Dashboard = (() => {
         value:     `€${currentIncidental.toFixed(0)}`,
         delta:     'Niet-structurele interne overboekingen',
         deltaType: '',
-        accent:    'gray',
+        accent:    'blue',
         tooltip:   'Eenmalige of onregelmatige overboekingen naar eigen rekeningen. Telt niet mee als uitgave.',
         detail:    'incidental',
         group:     'monthly',
@@ -245,6 +245,16 @@ const Dashboard = (() => {
   function _deltaType(pct) {
     if (Math.abs(pct) < CONFIG.DEVIATION_THRESHOLD * 100) return '';
     return pct > 0 ? 'delta-up' : 'delta-down';
+  }
+
+  // Returns a colored accent when actual deviates significantly from reference.
+  // higherIsBad=true: overspending is red; higherIsBad=false: undersaving is red.
+  function _deviationAccent(actual, reference, higherIsBad) {
+    if (reference <= 0) return 'blue';
+    const pct = (actual - reference) / reference;
+    if (Math.abs(pct) < CONFIG.DEVIATION_THRESHOLD) return 'blue';
+    if (pct > 0) return higherIsBad ? 'red' : 'green';
+    return higherIsBad ? 'green' : 'red';
   }
 
   // Open detail modal showing breakdown of a KPI
