@@ -2,10 +2,14 @@
 // DB.JS — SQLite database management via sql.js (WebAssembly)
 //
 // Flow:
-//   1. init()        — loads sql.js WASM binary
+//   1. init()        — loads sql.js WASM binary, auto-loads from OPFS if present
 //   2. createNew()   — creates fresh DB with schema + default categories
 //   3. loadFromFile()— loads existing .sqlite file from disk
 //   After either: showApp() is called to render the UI
+//
+// Local persistence: every DB.run() debounce-saves to a real .sqlite file in
+// the Origin Private File System (OPFS) so the browser session survives a page
+// refresh without Google Drive or a file picker.
 // ============================================================
 
 const DB = (() => {
@@ -64,9 +68,52 @@ const DB = (() => {
     );
   `;
 
-  // Run migrations to update older databases with new columns/tables
+  // ============================================================
+  // OPFS helpers — local persistence as a real .sqlite file
+  // ============================================================
+  const OPFS_FILENAME = 'vaste-lasten.sqlite';
+
+  async function _saveToOPFS() {
+    try {
+      const root     = await navigator.storage.getDirectory();
+      const fh       = await root.getFileHandle(OPFS_FILENAME, { create: true });
+      const writable = await fh.createWritable();
+      await writable.write(db.export());
+      await writable.close();
+    } catch (e) {
+      console.warn('[DB] OPFS save failed:', e);
+    }
+  }
+
+  async function _loadFromOPFS() {
+    try {
+      const root = await navigator.storage.getDirectory();
+      const fh   = await root.getFileHandle(OPFS_FILENAME);
+      const buf  = await (await fh.getFile()).arrayBuffer();
+      return new Uint8Array(buf);
+    } catch {
+      return null; // file doesn't exist yet
+    }
+  }
+
+  async function _clearOPFS() {
+    try {
+      const root = await navigator.storage.getDirectory();
+      await root.removeEntry(OPFS_FILENAME);
+    } catch { /* ignore */ }
+  }
+
+  // Debounced OPFS save — batches rapid mutations into one write
+  let _opfsTimer = null;
+  function _scheduleSave() {
+    clearTimeout(_opfsTimer);
+    _opfsTimer = setTimeout(_saveToOPFS, 500);
+  }
+
+  // ============================================================
+  // Migrations
+  // ============================================================
   function _migrate() {
-    // Helper: get column names for a table
     const getColumns = (table) => {
       const s = db.prepare(`PRAGMA table_info(${table})`);
       const cols = [];
@@ -75,12 +122,10 @@ const DB = (() => {
       return cols;
     };
 
-    // Migration 1: add label_id to transactions
     if (!getColumns('transactions').includes('label_id')) {
       db.run('ALTER TABLE transactions ADD COLUMN label_id INTEGER REFERENCES labels(id)');
     }
 
-    // Migration 3: add own_accounts table if missing
     try { db.run('SELECT 1 FROM own_accounts LIMIT 1'); } catch(e) {
       db.run(`CREATE TABLE IF NOT EXISTS own_accounts (
         id   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,20 +134,31 @@ const DB = (() => {
       )`);
     }
 
-    // Migration 2: add amount to labels
     if (!getColumns('labels').includes('amount')) {
       db.run('ALTER TABLE labels ADD COLUMN amount REAL');
     }
   }
 
-  // Load sql.js WASM — must be called once before anything else
+  // ============================================================
+  // Public API
+  // ============================================================
+
+  // Load sql.js WASM, then auto-restore from IndexedDB if available
   async function init() {
-    SQL = await initSqlJs({
-      locateFile: () => 'lib/sql-wasm.wasm'
-    });
+    SQL = await initSqlJs({ locateFile: () => 'lib/sql-wasm.wasm' });
+
+    // Skip auto-restore when the user prefers Google Drive
+    if (GoogleDrive.wasConnected()) return;
+
+    const cached = await _loadFromOPFS();
+    if (cached) {
+      db = new SQL.Database(cached);
+      db.run(SCHEMA);
+      _migrate();
+      _showApp();
+    }
   }
 
-  // Create a brand new empty database with default categories
   function createNew() {
     db = new SQL.Database();
     db.run(SCHEMA);
@@ -113,12 +169,10 @@ const DB = (() => {
     _showApp();
   }
 
-  // Trigger file picker for loading an existing .sqlite file
   function loadFromFile() {
     document.getElementById('db-file-input').click();
   }
 
-  // Called by the hidden file input after user picks a .sqlite file
   function loadFromFileInput(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -133,7 +187,6 @@ const DB = (() => {
     reader.readAsArrayBuffer(file);
   }
 
-  // Load database from a raw Uint8Array (used by Google Drive integration)
   function loadFromBuffer(buffer) {
     const arr = new Uint8Array(buffer);
     db = new SQL.Database(arr);
@@ -142,7 +195,6 @@ const DB = (() => {
     _showApp();
   }
 
-  // Run a SELECT query and return rows as plain objects
   function query(sql, params = []) {
     try {
       const stmt = db.prepare(sql);
@@ -157,21 +209,19 @@ const DB = (() => {
     }
   }
 
-  // Run an INSERT / UPDATE / DELETE statement
   function run(sql, params = []) {
     try {
       db.run(sql, params);
+      _scheduleSave();
     } catch (e) {
       console.error('[DB] Run error:', e.message, '\nSQL:', sql);
     }
   }
 
-  // Export database as raw Uint8Array (for saving/downloading)
   function exportRaw() {
     return db.export();
   }
 
-  // Prompt user to download the database as a .sqlite file
   function downloadSqlite() {
     const data = exportRaw();
     const blob = new Blob([data], { type: 'application/octet-stream' });
@@ -183,41 +233,37 @@ const DB = (() => {
     URL.revokeObjectURL(url);
   }
 
-  // Save to Google Drive if connected, otherwise show a toast reminder.
-  // silent=true suppresses the local download fallback (used for auto-saves after mutations)
+  // Save to Google Drive if connected, otherwise download as .sqlite file.
+  // silent=true suppresses the download fallback (used for auto-saves after import)
   async function save(silent = false) {
     const saved = await GoogleDrive.upload();
     if (!saved) {
       if (!silent) {
         downloadSqlite();
-        UI.toast('Lokaal opgeslagen — bewaar het bestand in Google Drive als backup.');
-      } else {
-        UI.toast('Niet verbonden met Google Drive — klik Opslaan om data te bewaren.');
+        UI.toast('Lokaal opgeslagen als .sqlite bestand.');
       }
     } else {
       UI.toast('Opgeslagen in Google Drive.');
     }
   }
 
-  // Wipe everything and start fresh
   async function reset() {
     if (!confirm('Alle data wissen? Dit kan niet ongedaan worden gemaakt.')) return;
 
-    // Create a fresh empty database
     db = new SQL.Database();
     db.run(SCHEMA);
     CONFIG.DEFAULT_CATEGORIES.forEach(name => {
       db.run('INSERT OR IGNORE INTO categories (name) VALUES (?)', [name]);
     });
 
-    // If connected to Google Drive, overwrite the file there too
+    await _clearOPFS();
+
     const driveUploadOk = await GoogleDrive.upload();
     if (driveUploadOk) {
       UI.toast('Database gereset en opgeslagen in Google Drive.');
     } else {
-      // Not connected to Drive — clear the preference so user starts clean
       localStorage.removeItem('vl_storage');
-      UI.toast('Database gereset. Sla op om de lege database te bewaren.');
+      UI.toast('Database gereset.');
     }
 
     _showApp();
@@ -227,7 +273,6 @@ const DB = (() => {
     return db !== null;
   }
 
-  // Internal: transition from landing screen to main app
   function _showApp() {
     document.getElementById('landing').style.display = 'none';
     document.getElementById('app').classList.add('visible');
