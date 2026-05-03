@@ -1,9 +1,9 @@
 /* ============================================================
    CARD-INSET.CSS — Recessed / inset container component
-   
+
    Usage: add class="card-inset" to any container element.
    Content inside will appear sunken into the background.
-   Cards inside will appear to float above the well surface.
+   Cards inside will appear to float above the surface.
 
    Example:
      <div class="card-inset">
@@ -12,61 +12,39 @@
    ============================================================ */
 
 .card-inset {
-  background: #e8e6e1;
+  background: #dedad4;
   border-radius: 20px;
   padding: 22px;
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow:
-    inset 0 4px 12px rgba(0,0,0,0.12),
-    inset 0 2px 4px rgba(0,0,0,0.08),
-    inset 0 10px 30px rgba(0,0,0,0.07);
-  position: relative;
   margin-bottom: 20px;
+
+  /* Inset shadows create the recessed depth effect */
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.15),
+    inset 0 4px 16px rgba(0,0,0,0.12),
+    inset 0 1px 2px rgba(0,0,0,0.2),
+    /* Bottom highlight for depth illusion */
+    inset 0 -1px 0 rgba(255,255,255,0.4);
+
+  border-top: 1px solid rgba(0,0,0,0.12);
+  border-left: 1px solid rgba(0,0,0,0.06);
+  border-right: 1px solid rgba(0,0,0,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.5);
 }
 
-/* Dark gradient along the top edge — strengthens the depth illusion */
-.card-inset::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0,0,0,0.1) 20%,
-    rgba(0,0,0,0.13) 50%,
-    rgba(0,0,0,0.1) 80%,
-    transparent
-  );
-  border-radius: 20px 20px 0 0;
-  pointer-events: none;
-}
-
-/* Subtle light highlight along the bottom — completes the recessed look */
-.card-inset::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
-  border-radius: 0 0 20px 20px;
-  pointer-events: none;
-}
-
-/* Cards inside a well get an extra lift via top highlight */
+/* Cards inside get lifted appearance */
 .card-inset .kpi-card,
 .card-inset .card,
 .card-inset .chart-card,
 .card-inset .table-wrap {
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.85),
-    0 4px 12px rgba(0,0,0,0.08),
-    0 10px 28px rgba(0,0,0,0.07);
+    0 1px 0 rgba(255,255,255,0.9),
+    0 4px 12px rgba(0,0,0,0.1),
+    0 10px 28px rgba(0,0,0,0.08);
 }
 
 .card-inset .kpi-card:hover {
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.85),
-    0 8px 20px rgba(0,0,0,0.1),
-    0 18px 36px rgba(0,0,0,0.09);
+    0 1px 0 rgba(255,255,255,0.9),
+    0 8px 20px rgba(0,0,0,0.12),
+    0 18px 36px rgba(0,0,0,0.1);
 }
