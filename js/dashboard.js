@@ -305,10 +305,10 @@ const Dashboard = (() => {
       cols  = ['Datum', 'Categorie', 'Post', 'Omschrijving', 'Bedrag'];
       const actRows = rows.map(r => `
         <tr>
-          <td>${r.date}</td>
-          <td><span class="badge">${r.cat || '—'}</span></td>
-          <td><span class="badge badge-fixed">${r.post_name || '—'}</span></td>
-          <td>${r.description.substring(0, 50)}</td>
+          <td style="white-space:nowrap">${r.date}</td>
+          <td style="white-space:nowrap"><span class="badge">${r.cat || '—'}</span></td>
+          <td style="white-space:nowrap"><span class="badge badge-fixed">${r.post_name || '—'}</span></td>
+          <td style="max-width:160px">${r.description.substring(0, 50)}</td>
           <td class="amount-fixed">€${r.amount.toFixed(2)}</td>
         </tr>`).join('');
       _showDetailModal(title, cols, actRows, total,
