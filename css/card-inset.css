@@ -36,6 +36,16 @@
       0 10px 28px rgba(60,35,10,0.09);
   }
 
+  .card-inset-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(0,0,0,0.55);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
   .card-inset .kpi-card:hover {
     box-shadow:
       0 1px 0 rgba(255,255,255,0.85),

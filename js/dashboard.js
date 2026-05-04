@@ -159,6 +159,7 @@ const Dashboard = (() => {
 
     document.getElementById('kpi-grid').innerHTML = `
       <div class="card-inset">
+        <div class="card-inset-title">Structurele uitgaven</div>
         <div class="kpi-row">${structural.map(kpiCard).join('')}</div>
       </div>
       <div class="kpi-month-divider">
@@ -167,6 +168,7 @@ const Dashboard = (() => {
         <div class="kpi-month-line"></div>
       </div>
       <div class="card-inset">
+        <div class="card-inset-title">${monthLabel}</div>
         <div class="kpi-row">${monthly.map(kpiCard).join('')}</div>
       </div>
     `;
