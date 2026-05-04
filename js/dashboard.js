@@ -206,9 +206,23 @@ const Dashboard = (() => {
       return;
     }
 
-    tbody.innerHTML = deviations.map(d => `
+    const postLabels = DB.query(`
+      SELECT rp.id AS post_id, MIN(l.name) AS label_name
+      FROM   recurring_posts rp
+      JOIN   transactions t ON t.post_id = rp.id
+      JOIN   labels       l ON l.id      = t.label_id
+      GROUP  BY rp.id
+    `);
+    const labelMap = Object.fromEntries(postLabels.map(r => [r.post_id, r.label_name]));
+
+    tbody.innerHTML = deviations.map(d => {
+      const labelName   = labelMap[d.post.id];
+      const displayName = labelName
+        ? `<span class="label-pill">${labelName}</span>`
+        : d.post.name;
+      return `
       <tr>
-        <td>${d.post.name}</td>
+        <td>${displayName}</td>
         <td><span class="badge">${d.post.category_name || 'Overig'}</span></td>
         <td>€${d.prev.toFixed(2)}</td>
         <td><strong>€${d.current.toFixed(2)}</strong></td>
@@ -220,7 +234,8 @@ const Dashboard = (() => {
           ${d.yoyDelta !== null ? _signedPct(d.yoyDelta * 100) : '—'}
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function _renderEmpty() {
